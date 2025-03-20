@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Slot, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingScreen from "./loading";
+import "../global.css";
 
 SplashScreen.preventAutoHideAsync();
 
