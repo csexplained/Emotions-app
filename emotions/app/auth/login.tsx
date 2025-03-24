@@ -4,9 +4,9 @@ import PhoneInput from "react-native-phone-number-input";
 import { Link } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import LoginStartedScreen from "@/components/loginstarted";
-import Loginnumber from "@/components/Loginnumber";
-import OtpScreen from "@/components/otpscreen";
+import LoginStartedScreen from "@/components/authflow/loginstarted";
+import Loginnumber from "@/components/authflow/Loginnumber";
+import OtpScreen from "@/components/authflow/otpscreen";
 import ThankYouScreen from "@/components/CompleteScreen";
 
 export default function LoginScreen() {
