@@ -1,7 +1,10 @@
 import React, { useState, useRef } from "react";
 import { View, Text, Pressable, Image, ScrollView, TextInput, StyleSheet } from "react-native";
-import { MaterialIcons, Ionicons, Entypo } from "@expo/vector-icons";
+import { Ionicons, Entypo } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
+import Feather from '@expo/vector-icons/Feather';
+import Modeselector from "./Modeselecter";
+
 
 const ChatScreen = () => {
     interface Message {
@@ -11,6 +14,11 @@ const ChatScreen = () => {
         time: string;
         isMe: boolean;
     }
+    const modes = [
+        "How are you?",
+        "How to manage anger?",
+        "How to reduce anger?"
+    ]
 
     const [messages, setMessages] = useState<Message[]>([
         { id: 1, text: "Hello! How can I help you today?", time: "10:30 AM", isMe: false },
@@ -19,6 +27,7 @@ const ChatScreen = () => {
     ]);
     const [newMessage, setNewMessage] = useState("");
     const scrollViewRef = useRef<ScrollView>(null);
+    const [mode, setmode] = useState("");
 
     // User profile image (replace with your actual user image)
     const userProfileImage = require('@/assets/images/chatlogo.png');
@@ -94,7 +103,8 @@ const ChatScreen = () => {
                 contentContainerStyle={styles.chatContent}
                 showsVerticalScrollIndicator={false}
             >
-                {messages.map((message) => (
+                {mode === "" && <Modeselector selectedmode={mode} setmode={setmode} modes={modes} />}
+                {mode.length > 0 && messages.map((message) => (
                     <View
                         key={message.id}
                         style={[
@@ -136,16 +146,17 @@ const ChatScreen = () => {
                         )}
                     </View>
                 ))}
+
             </ScrollView>
 
             {/* Input Area */}
             <View style={styles.inputContainer}>
                 <Pressable style={styles.cameraButton} onPress={openCamera}>
-                    <Ionicons name="camera-outline" size={24} color="#04714A" />
+                    <Ionicons name="camera-outline" size={24} color="#ffffff" />
                 </Pressable>
                 <TextInput
                     style={styles.input}
-                    placeholder="Type your message..."
+                    placeholder="Ask me anything.."
                     value={newMessage}
                     onChangeText={setNewMessage}
                     multiline
@@ -155,10 +166,10 @@ const ChatScreen = () => {
                     onPress={handleSend}
                     disabled={!newMessage.trim()}
                 >
-                    <MaterialIcons
+                    <Feather
                         name="send"
                         size={24}
-                        color={newMessage.trim() ? "#04714A" : "#ccc"}
+                        color={newMessage.trim() ? "#ffffff" : "#ffffff"}
                     />
                 </Pressable>
             </View>
@@ -280,41 +291,64 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
+        paddingVertical: 0,
+        margin: 10,
+        borderRadius: 30,
         backgroundColor: 'white',
         borderTopWidth: 1,
         borderTopColor: '#e0e0e0',
     },
     cameraButton: {
+        backgroundColor: "black",
         padding: 8,
+        color: "white",
+        borderRadius: 20,
         marginRight: 8,
     },
     input: {
         flex: 1,
         minHeight: 40,
         maxHeight: 120,
-        paddingHorizontal: 12,
+        paddingHorizontal: 2,
+        fontWeight: "800",
         paddingVertical: 8,
-        backgroundColor: '#f5f5f5',
         borderRadius: 20,
         fontSize: 16,
     },
     sendButton: {
-        padding: 8,
-        marginLeft: 8,
+        backgroundColor: "#04714A",
+        color: "ffffff",
+        borderRadius: 30,
+        padding: 10,
     },
     fab: {
         position: 'absolute',
         right: 24,
         bottom: 80,
-        width: 56,
-        height: 56,
+        width: 46,
+        height: 46,
         borderRadius: 28,
-        backgroundColor: '#04714A',
+        backgroundColor: 'black',
         justifyContent: 'center',
         alignItems: 'center',
         elevation: 4,
     },
+    button: {
+        width: '100%',
+        marginTop: 32,
+        height: 56,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: "#04714A",
+        borderRadius: 8
+    },
+    buttonPressed: {
+        opacity: 0.8
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 18
+    }
 });
 
 export default ChatScreen;
