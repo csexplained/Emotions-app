@@ -1,15 +1,13 @@
-
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
 import { Slot, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import LoadingScreen from "./loading";
+import LoadingScreen from "../components/loading";
 import "@/global.css";
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync(); // Ensure splash screen doesn't auto-hide
 
 export default function RootLayout() {
   const router = useRouter();
@@ -22,22 +20,16 @@ export default function RootLayout() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        // Simulate loading (fetch user token from storage)
-        const token = await AsyncStorage.getItem("authToken");
+        const token = true
+        setIsLoggedIn(!!token); // Set login state based on token
 
-        if (token) {
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate loading time
-        await SplashScreen.hideAsync();
-        setAppReady(true);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate loading delay
       } catch (error) {
         console.error("Error checking auth:", error);
         setIsLoggedIn(false);
+      } finally {
         setAppReady(true);
+        await SplashScreen.hideAsync(); // Hide splash **after** app is ready
       }
     }
 
@@ -50,6 +42,7 @@ export default function RootLayout() {
     }
   }, [appReady, isLoggedIn]);
 
+  // Show loading screen while app is initializing
   if (!appReady) {
     return <LoadingScreen />;
   }

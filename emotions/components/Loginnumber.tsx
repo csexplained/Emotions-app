@@ -10,7 +10,7 @@ interface LoginStartedScreenProps {
     setStep: (step: number) => void;
 }
 
-export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber,setStep }: LoginStartedScreenProps) {
+export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber, setStep }: LoginStartedScreenProps) {
 
     const router = useRouter();
     return (
@@ -31,7 +31,7 @@ export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber
                         </Pressable>
 
                         <View className="mt-4 ">
-                            <Text style={{fontWeight : 700}} className="text-3xl font-semibold">Enter Your Number</Text>
+                            <Text style={{ fontWeight: 700 }} className="text-3xl font-semibold">Enter Your Number</Text>
                             <Text className="text-sm text-[#00000080] font-normal my-2">
                                 Provide Your Phone Number to Proceed with Secure Login
                             </Text>
@@ -54,8 +54,8 @@ export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber
                     </View>
 
                     {/* Bottom Section (Sign Up Button) */}
-                    <View style={{ marginBottom: 20 }}>
-                        <Pressable onPress={()=> setStep(3)} className="w-full h-12 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
+                    <View style={{ marginBottom: 10 }}>
+                        <Pressable onPress={() => setStep(3)} className="w-full h-12 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
                             <Text className="text-white text-lg">Continue</Text>
                         </Pressable>
                     </View>

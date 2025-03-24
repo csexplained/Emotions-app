@@ -75,14 +75,14 @@ export default function OtpScreen({ otp, setOtp, resendOtp, setstep }: OtpScreen
 
 
                     {/* Bottom Section */}
-                    <View style={{ marginBottom: 20 }}>
+                    <View style={{ marginBottom: 10 }}>
 
-
-                        <Link href="/auth" asChild>
-                            <Pressable className="w-full h-12 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
-                                <Text className="text-white text-lg">Verify</Text>
+                        {/* Bottom Section (Sign Up Button) */}
+                        <View>
+                            <Pressable onPress={() => setstep(4)} className="w-full h-12 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
+                                <Text className="text-white text-lg">Continue</Text>
                             </Pressable>
-                        </Link>
+                        </View>
                     </View>
                 </View>
             </TouchableWithoutFeedback>
