@@ -138,7 +138,7 @@ export default function Indexscreen() {
                 </Pressable>
                 <Text style={[styles.title, { textAlign: 'center' }]}>Information</Text>
                 {/* Add an empty view to balance the flex layout */}
-                <View style={styles.backButton} />
+                <View style={styles.backButton2} />
             </View>
 
             {/* Scrollable Content */}
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between', // This will properly space the items
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingVertical: 5,
         paddingTop: Platform.OS === 'ios' ? 50 : 20,
         zIndex: 1,
         backgroundColor: '#F0FFFA', // Match your background color
@@ -249,6 +249,14 @@ const styles = StyleSheet.create({
     },
     backButton: {
         backgroundColor: 'white',
+        padding: 8,
+        borderRadius: 8,
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    backButton2: {
         padding: 8,
         borderRadius: 8,
         width: 40,
