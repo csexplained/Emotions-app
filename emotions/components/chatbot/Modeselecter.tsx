@@ -24,7 +24,7 @@ const Modeselector = ({ modes, setmode, selectedmode }: ChatScreenProps) => {
                         >
                             <Text style={styles.buttonText}>{mode}</Text>
                             <View style={styles.fab}>
-                                <AntDesign name="arrowright" size={28} color="white" />
+                                <AntDesign name="arrowright" size={22} color="white" />
                             </View>
 
                         </Pressable>
@@ -42,11 +42,11 @@ const styles = StyleSheet.create({
 
     },
     arrowbutton: {
-        height: 30,
-        width: 30,
+        height: 20,
+        width: 20,
         borderRadius: 30,
         backgroundColor: 'black',
-        padding: 15,
+        padding: 10,
     },
     button: {
         padding: 20,

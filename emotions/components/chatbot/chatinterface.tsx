@@ -256,11 +256,11 @@ const styles = StyleSheet.create({
     },
     myMessage: {
         backgroundColor: 'white',
-        borderTopRightRadius: 0,
+        borderBottomRightRadius: 0,
     },
     otherMessage: {
         backgroundColor: '#04714A',
-        borderTopLeftRadius: 0,
+        borderBottomLeftRadius: 0,
     },
     myMessageText: {
         color: 'black',
