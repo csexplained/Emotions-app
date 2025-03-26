@@ -291,12 +291,10 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 0,
+        padding : 5,
         margin: 10,
         borderRadius: 30,
         backgroundColor: 'white',
-        borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
     },
     cameraButton: {
         backgroundColor: "black",
@@ -323,7 +321,7 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        right: 24,
+        right: 12,
         bottom: 80,
         width: 46,
         height: 46,

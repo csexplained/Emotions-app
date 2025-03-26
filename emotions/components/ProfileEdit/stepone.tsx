@@ -97,7 +97,7 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
-                    <View className="flex-row justify-between items-center">
+                    <View style={{ width: "auto", justifyContent: "space-between" }} className="flex-row w-screen justify-between items-center">
                         <Pressable
                             onPress={() => router.back()}
                             className="bg-white p-2 rounded-lg w-10 h-10 flex items-center justify-center"
@@ -166,7 +166,7 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                     </View>
                     <View style={{ marginTop: 10 }}>
                         <Text style={{ fontWeight: "400" }} className="text-sm my-2">Gender</Text>
-                        <View className="flex-row justify-between">
+                        <View style={{ width: "auto", justifyContent: "space-between" }} className="flex-row justify-between">
                             {["male", "female", "other"].map((gender) => (
                                 <Pressable
                                     key={gender}

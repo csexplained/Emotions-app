@@ -10,7 +10,7 @@ import Steptwo from "@/components/profilebuild/steptwo";
 import AboutYou from "@/types/aboutyoutypes";
 import ThankYouScreen from "@/components/CompleteScreen";
 export default function Indexscreen() {
-  
+
   const [userdata, setuserData] = useState<userdata>({
     firstname: "Bhanu",
     lastname: "Pratap",

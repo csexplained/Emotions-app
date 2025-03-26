@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import Card from "@/components/Infotab/AngerCard";
 import Humanicon from "@/assets/icons/humanicon";
 import Categories from '@/components/Home/Categories';
@@ -12,8 +12,9 @@ import ActivityCard from "@/components/Home/ActivityCard";
 import CardData from "@/types/Carddata.types";
 import activitiesData from "@/Data/activity";
 
-
 export default function Indexscreen() {
+
+
   const chunkArray = (array: CardData[], chunkSize: number) => {
     const result = [];
     for (let i = 0; i < array.length; i += chunkSize) {
@@ -30,63 +31,14 @@ export default function Indexscreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1, backgroundColor: "#F0FFFA" }}
     >
-
       {/* Sticky Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Image
-            source={require('@/assets/images/chatlogo.png')}
-            style={styles.logo}
-          />
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Bhanu Pratap Singh</Text>
-            <View style={styles.flexbox}><Text style={styles.statusText}> <Text style={{ color: "#04714A", marginRight: 2 }}>• </Text>Meditation</Text></View>
-          </View>
-        </View>
-        <Pressable style={styles.menuButton}>
-          <NotificationIcon />
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <AntDesign name="arrowleft" size={24} color="white" />
         </Pressable>
-      </View>
-      <View style={styles.header}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Search"
-            multiline
-          />
-          <Pressable
-            style={styles.sendButton}
-
-          >
-            <Feather
-              name="search"
-              size={20}
-              color={"#ffffff"}
-            />
-          </Pressable>
-        </View>
-      </View>
-      <Categories />
-      <View style={{
-        paddingHorizontal: 16,
-        paddingVertical: 5,
-        flexDirection: 'row',
-        alignItems: 'center',  // This vertically centers children
-        justifyContent: 'space-between',
-        width: '100%',  // Better than "auto" for full width
-      }}>
-        <Text style={{
-          fontWeight: '800',
-          fontSize: 20,
-          // Remove marginBottom as it affects alignment
-        }}>Trainings</Text>
-        <Link href={"/Trainings"} style={{
-          color: "#04714A",
-          fontWeight: '800',
-          fontSize: 15,
-          // Add vertical padding to compensate for smaller font
-          paddingVertical: 2.5  // (20-15)/2 = 2.5 to center perfectly
-        }}>See All</Link>
+        <Text style={[styles.title, { textAlign: 'center' }]}>Trainings</Text>
+        {/* Add an empty view to balance the flex layout */}
+        <View style={styles.backButton2} />
       </View>
       {/* Scrollable Content */}
       <ScrollView
@@ -230,7 +182,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between', // This will properly space the items
     paddingHorizontal: 20,
-    paddingVertical: 5,
+    paddingVertical: 10,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     zIndex: 1,
     backgroundColor: '#F0FFFA', // Match your background color
@@ -239,10 +191,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Black',
     fontSize: 20,
     flex: 1,
+    fontWeight : 800,
     textAlign: 'center', // Center the text
   },
   backButton: {
-    backgroundColor: 'white',
+    backgroundColor: '#04714A',
     padding: 8,
     borderRadius: 8,
     width: 40,

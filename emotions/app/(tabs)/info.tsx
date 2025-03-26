@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         paddingTop: 20, // Space for header
-        paddingBottom: 20,
+        paddingBottom: 70,
         paddingHorizontal: CARD_MARGIN,
     },
     cardsGrid: {
