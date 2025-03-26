@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, ImageBackground, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { ExternalPathString, Link, Redirect, RelativePathString } from 'expo-router';
 
 interface ActivityCardProps {
     title?: string;
@@ -11,6 +11,7 @@ interface ActivityCardProps {
     duration?: string;
     image?: any;
     colors?: [string, string];
+    redirect: string
 }
 
 const ActivityCard: React.FC<ActivityCardProps> = ({
@@ -19,7 +20,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
     tags = ["Meditation", "Sleep", "Calm", "Mindfulness", "Relaxation"],
     duration = "45 min",
     image = require('@/assets/images/ActivityCard.png'),
-    colors = ["#D7FFF1", "#58DFAE"]
+    colors = ["#D7FFF1", "#58DFAE"],
+    redirect = "/Trainings/trainingscreen"
 }) => {
     const generateTagColors = (baseColor: string, count: number) => {
         const colors = [];
@@ -41,7 +43,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 end={{ x: 1, y: 1 }}
                 style={styles.gradientBackground}
             >
-                <Link href={"/Trainings/trainingscreen"}>
+                <Link href={redirect as RelativePathString}>
                     <View style={styles.cardContent}>
                         <View style={styles.textContent}>
                             <Text style={styles.title}>{title}</Text>

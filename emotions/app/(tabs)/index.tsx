@@ -95,6 +95,7 @@ export default function Indexscreen() {
       >
         {activitiesData.map(activity => (
           <ActivityCard
+            redirect={activity.redirect}
             key={activity.id}
             title={activity.title}
             description={activity.description}

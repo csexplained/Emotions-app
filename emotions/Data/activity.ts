@@ -7,7 +7,8 @@ const activitiesData = [
     tags: ["Sleep", "Relaxation", "Night", "Music"],
     duration: "45 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#E7F3FF", "#9ECBFF"] as [string, string]
+    colors: ["#E7F3FF", "#9ECBFF"] as [string, string],
+    redirect: "/Trainings/trainingscreen"
   },
   {
     id: 3,
@@ -16,7 +17,8 @@ const activitiesData = [
     tags: ["Yoga", "Exercise", "Flexibility", "Wellness"],
     duration: "30 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#E7FFED", "#9EFFB3"] as [string, string]
+    colors: ["#E7FFED", "#9EFFB3"] as [string, string],
+    redirect: "/Trainings/Musicplayer"
   },
   {
     id: 4,
@@ -25,7 +27,8 @@ const activitiesData = [
     tags: ["Breathing", "Calm", "Focus", "Anxiety"],
     duration: "15 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#FFF4E7", "#FFD19E"] as [string, string]
+    colors: ["#FFF4E7", "#FFD19E"] as [string, string],
+    redirect: "/Trainings/Readingscreen"
   },
   {
     id: 5,
@@ -34,7 +37,9 @@ const activitiesData = [
     tags: ["Stress", "Relaxation", "Quick", "Mental Health"],
     duration: "5 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#F5E7FF", "#D19EFF"] as [string, string]
+    colors: ["#F5E7FF", "#D19EFF"] as [string, string],
+    redirect: "/Trainings/Questions"
+
   },
   {
     id: 6,
@@ -43,7 +48,8 @@ const activitiesData = [
     tags: ["Walking", "Mindfulness", "Outdoor", "Exercise"],
     duration: "20 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#E7F9FF", "#9EE6FF"] as [string, string]
+    colors: ["#E7F9FF", "#9EE6FF"] as [string, string],
+    redirect: "/Trainings/trainingscreen"
   },
   {
     id: 7,
@@ -52,7 +58,8 @@ const activitiesData = [
     tags: ["Journaling", "Gratitude", "Mental Health", "Writing"],
     duration: "10 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#FFFAE7", "#FFF19E"] as [string, string]
+    colors: ["#FFFAE7", "#FFF19E"] as [string, string],
+    redirect: "/Trainings/trainingscreen"
   },
   {
     id: 8,
@@ -61,7 +68,8 @@ const activitiesData = [
     tags: ["Relaxation", "Sleep", "Body", "Tension"],
     duration: "25 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#E7FFFB", "#9EFFE8"] as [string, string]
+    colors: ["#E7FFFB", "#9EFFE8"] as [string, string],
+    redirect: "/Trainings/trainingscreen"
   },
   {
     id: 1,
@@ -70,7 +78,8 @@ const activitiesData = [
     tags: ["Meditation", "Morning", "Calm", "Mindfulness"],
     duration: "10 min",
     image: require('@/assets/images/ActivityCard.png'),
-    colors: ["#FFE7E7", "#FF9E9E"] as [string, string]
+    colors: ["#FFE7E7", "#FF9E9E"] as [string, string],
+    redirect: "/Trainings/trainingscreen"
   },
 ];
 
