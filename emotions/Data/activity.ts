@@ -8,7 +8,8 @@ const activitiesData = [
     duration: "45 min",
     image: require('@/assets/images/ActivityCard.png'),
     colors: ["#E7F3FF", "#9ECBFF"] as [string, string],
-    redirect: "/Trainings/trainingscreen"
+    redirect: "/Trainings/Musicplayer"
+
   },
   {
     id: 3,
@@ -18,7 +19,7 @@ const activitiesData = [
     duration: "30 min",
     image: require('@/assets/images/ActivityCard.png'),
     colors: ["#E7FFED", "#9EFFB3"] as [string, string],
-    redirect: "/Trainings/Musicplayer"
+    redirect: "/Trainings/trainingscreen"
   },
   {
     id: 4,

@@ -1,8 +1,18 @@
 import React from "react";
-import { View, Pressable, Text, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
+import {
+    View,
+    Pressable,
+    Text,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
+    StyleSheet
+} from "react-native";
 import PhoneInput from "react-native-phone-number-input";
 import { Link, useRouter } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
+
 interface LoginStartedScreenProps {
     phoneInputRef: React.RefObject<PhoneInput>;
     phoneNumber: string;
@@ -11,34 +21,33 @@ interface LoginStartedScreenProps {
 }
 
 export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber, setStep }: LoginStartedScreenProps) {
-
     const router = useRouter();
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1, backgroundColor: "#F0FFFA" }}
+            style={styles.container}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View className="flex-1 justify-between px-6 py-6">
-
+                <View style={styles.innerContainer}>
                     {/* Top Section (Back Button & Text) */}
                     <View>
                         <Pressable
-                            onPress={() => setStep(1)}  // Go back on click
-                            className="bg-white  p-2"
-                            style={{ width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" }}>
+                            onPress={() => setStep(1)}
+                            style={styles.backButton}
+                        >
                             <AntDesign name="arrowleft" size={24} color="black" />
                         </Pressable>
 
-                        <View className="mt-4 ">
-                            <Text style={{ fontWeight: 700 }} className="text-3xl font-semibold">Enter Your Number</Text>
-                            <Text className="text-sm text-[#00000080] font-normal my-2">
+                        <View style={styles.textContainer}>
+                            <Text style={styles.title}>Enter Your Number</Text>
+                            <Text style={styles.subtitle}>
                                 Provide Your Phone Number to Proceed with Secure Login
                             </Text>
                         </View>
 
                         {/* Phone Number Input */}
-                        <View className="mt-4">
+                        <View style={styles.phoneInputContainer}>
                             <PhoneInput
                                 ref={phoneInputRef}
                                 defaultValue={phoneNumber}
@@ -47,21 +56,88 @@ export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber
                                 onChangeFormattedText={(text) => setPhoneNumber(text)}
                                 withShadow
                                 autoFocus
-                                containerStyle={{ width: "100%", height: 50, borderRadius: 10 }}
-                                textContainerStyle={{ paddingVertical: 0, backgroundColor: "#F1F1F1" }}
+                                containerStyle={styles.phoneInput}
+                                textContainerStyle={styles.phoneInputTextContainer}
                             />
                         </View>
                     </View>
 
                     {/* Bottom Section (Sign Up Button) */}
-                    <View style={{ marginBottom: 10 }}>
-                        <Pressable onPress={() => setStep(3)} className="w-full h-12 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
-                            <Text className="text-white text-lg">Continue</Text>
+                    <View style={styles.buttonContainer}>
+                        <Pressable
+                            onPress={() => setStep(3)}
+                            style={styles.continueButton}
+                        >
+                            <Text style={styles.continueButtonText}>Continue</Text>
                         </Pressable>
                     </View>
-
                 </View>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "#F0FFFA"
+    },
+    innerContainer: {
+        flex: 1,
+        justifyContent: "space-between",
+        paddingHorizontal: 24,
+        paddingVertical: 24
+    },
+    backButton: {
+        backgroundColor: "white",
+        padding: 8,
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    textContainer: {
+        marginTop: 16
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: "700"
+    },
+    subtitle: {
+        fontSize: 14,
+        color: "rgba(0, 0, 0, 0.5)",
+        fontWeight: "normal",
+        marginVertical: 8
+    },
+    phoneInputContainer: {
+        marginTop: 16
+    },
+    phoneInput: {
+        width: "100%",
+        height: 50,
+        borderRadius: 10
+    },
+    phoneInputTextContainer: {
+        paddingVertical: 0,
+        backgroundColor: "#F1F1F1"
+    },
+    buttonContainer: {
+        marginBottom: 5
+    },
+    continueButton: {
+        width: "100%",
+        height: 55,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#04714A",
+        borderRadius: 8
+    },
+    continueButtonPressed: {
+        opacity: 0.8
+    },
+    continueButtonText: {
+        color: "white",
+        fontSize: 18
+    }
+});

@@ -1,38 +1,140 @@
-import { View, TextInput, Image, Text, Pressable } from "react-native";
+import {
+    View,
+    TextInput,
+    Image,
+    Text,
+    Pressable,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
+    StyleSheet
+} from "react-native";
 import { Link } from "expo-router";
-import { ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
-export default function IndexScreen() {
 
+export default function IndexScreen() {
     return (
         <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
+            contentContainerStyle={styles.scrollViewContent}
             keyboardShouldPersistTaps="handled"
         >
-
-            <View className="flex flex-col bg-[#F0FFFA] justify-start items-center">
-                <View className="bg-[#F0FFFA] w-full h-[75vh]">
-                    <View className="flex h-[90%] px-2 justify-center items-center w-full">
-                        <Image source={require("@/assets/images/Signuppages.png")} className="w-max h-max" />
+            <View style={styles.mainContainer}>
+                <View style={styles.topSection}>
+                    <View style={styles.imageContainer}>
+                        <Image
+                            source={require("@/assets/images/Signuppages.png")}
+                            style={styles.image}
+                            resizeMode="contain"
+                        />
                     </View>
-                    <View className="flex h-max p-2 flex-row justify-evenly items-center w-full">
-                        <View className="w-[25%] rounded-sm h-1 bg-[#04714A]"></View>
-                        <View className="w-[25%] rounded-sm h-1 bg-[#04714baf]"></View>
-                        <View className="w-[25%] rounded-sm h-1 bg-[#04714baf]"></View>
+                    <View style={styles.progressIndicatorContainer}>
+                        <View style={[styles.progressIndicator, styles.activeProgress]}></View>
+                        <View style={[styles.progressIndicator, styles.inactiveProgress]}></View>
+                        <View style={[styles.progressIndicator, styles.inactiveProgress]}></View>
                     </View>
                 </View>
-                <View className="bg-[#FFFFFF] border  rounded-3xl px-4 py-8 w-full h-full">
-                    <Text className="text-2xl font-semibold text-center">Discover Experiences with a simple swipe</Text>
-                    <Text className="text-sm font-normal text-center my-2">Curated activities at your fingertips</Text>
-                    {/* it will be at the bottem of current div */}
+
+                <View style={styles.bottomSection}>
+                    <Text style={styles.title}>Discover Experiences with a simple swipe</Text>
+                    <Text style={styles.subtitle}>Curated activities at your fingertips</Text>
 
                     <Link href="/auth/login" asChild>
-                        <Pressable className="w-full h-12 my-4 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
-                            <Text className="text-white text-lg">Sign Up</Text>
+                        <Pressable
+                            style={styles.signUpButton}
+                        >
+                            <Text style={styles.signUpButtonText}>Sign Up</Text>
                         </Pressable>
                     </Link>
                 </View>
             </View>
-
         </ScrollView>
     );
 }
+
+const styles = StyleSheet.create({
+    scrollViewContent: {
+        flexGrow: 1
+    },
+    mainContainer: {
+        flex: 1,
+        flexDirection: 'column',
+        backgroundColor: '#F0FFFA',
+        justifyContent: 'flex-start',
+        alignItems: 'center'
+    },
+    topSection: {
+        backgroundColor: '#F0FFFA',
+        width: '100%',
+        height: '70%'
+    },
+    imageContainer: {
+        flex: 1,
+        paddingHorizontal: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        height: '80%'
+    },
+    image: {
+        maxWidth: '100%',
+        maxHeight: '100%'
+    },
+    progressIndicatorContainer: {
+        height: 'auto',
+        padding: 8,
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignItems: 'center',
+        width: '100%'
+    },
+    progressIndicator: {
+        width: '25%',
+        height: 4,
+        borderRadius: 2
+    },
+    activeProgress: {
+        backgroundColor: '#04714A'
+    },
+    inactiveProgress: {
+        backgroundColor: 'rgba(4, 113, 74, 0.69)'
+    },
+    bottomSection: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        borderRadius: 24,
+        paddingHorizontal: 16,
+        paddingVertical: 32,
+        width: '100%',
+        height: 'auto',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 10,
+    },
+    subtitle: {
+        fontSize: 14,
+        fontWeight: 'normal',
+        textAlign: 'center',
+        marginVertical: 14
+    },
+    signUpButton: {
+        width: '100%',
+        height: 48,
+        marginVertical: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#04714A',
+        borderRadius: 8
+    },
+    signUpButtonPressed: {
+        opacity: 0.8
+    },
+    signUpButtonText: {
+        color: 'white',
+        fontSize: 18
+    }
+});

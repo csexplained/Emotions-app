@@ -20,7 +20,7 @@ export default function RootLayout() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const token = true
+        const token = false
         setIsLoggedIn(!!token); // Set login state based on token
 
         await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate loading delay

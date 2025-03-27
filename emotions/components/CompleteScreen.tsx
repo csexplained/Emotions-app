@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import LottieView from "lottie-react-native";
 import { useRouter } from "expo-router";
 
@@ -12,7 +12,7 @@ export default function ThankYouScreen({ redirectTo = "/" }: { redirectTo: strin
         const interval = setInterval(() => {
             setTime((prevTime) => {
                 if (prevTime <= 1) {
-                    clearInterval(interval); // Clear interval before redirecting
+                    clearInterval(interval);
                 }
                 return prevTime - 1;
             });
@@ -23,7 +23,6 @@ export default function ThankYouScreen({ redirectTo = "/" }: { redirectTo: strin
             router.push(redirectTo as any);
         }, 5000);
 
-        // Cleanup function
         return () => {
             clearInterval(interval);
             clearTimeout(timeout);
@@ -31,17 +30,13 @@ export default function ThankYouScreen({ redirectTo = "/" }: { redirectTo: strin
     }, [redirectTo, router]);
 
     return (
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#04714A" }}>
+        <View style={styles.container}>
             {/* Confetti Background Animation */}
             <LottieView
                 source={require("../assets/lottie/confetti3.json")}
                 autoPlay
                 loop={false}
-                style={{
-                    position: "absolute",
-                    width: "100%",
-                    height: "100%",
-                }}
+                style={styles.confettiAnimation}
             />
 
             {/* Completed Checkmark Animation */}
@@ -49,13 +44,37 @@ export default function ThankYouScreen({ redirectTo = "/" }: { redirectTo: strin
                 source={require("../assets/lottie/completed.json")}
                 autoPlay
                 loop={false}
-                style={{ width: 150, height: 150 }}
+                style={styles.checkmarkAnimation}
             />
 
             {/* Success Message */}
-            <Text style={{ fontSize: 16, color: "white", textAlign: "center", marginTop: 10 }}>
+            <Text style={styles.redirectText}>
                 Redirecting in {time} seconds...
             </Text>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#04714A"
+    },
+    confettiAnimation: {
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+    },
+    checkmarkAnimation: {
+        width: 150,
+        height: 150
+    },
+    redirectText: {
+        fontSize: 16,
+        color: "white",
+        textAlign: "center",
+        marginTop: 10
+    }
+});

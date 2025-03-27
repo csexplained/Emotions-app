@@ -1,5 +1,16 @@
-import React, { useRef, useState } from "react";
-import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
+import React from "react";
+import {
+    View,
+    Pressable,
+    Text,
+    Image,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
+    StyleSheet
+} from "react-native";
 import PhoneInput from "react-native-phone-number-input";
 import { Link } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -16,35 +27,35 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ScrollView
-                contentContainerStyle={{ flexGrow: 1 }}
+                contentContainerStyle={styles.scrollViewContent}
                 keyboardShouldPersistTaps="handled"
             >
-                <View className="w-full h-full bg-[#F0FFFA] justify-start items-center">
+                <View style={styles.mainContainer}>
                     {/* Background Image */}
                     <Image
                         source={require("@/assets/images/getstartedpagebg.png")}
-                        className="w-full h-auto"
+                        style={styles.backgroundImage}
                         resizeMode="cover"
                     />
 
                     {/* Content Wrapper */}
-                    <View className="px-6 py-6 w-full">
-                        <View style={{ borderRadius: 30 }} className="bg-white border shadow-lg rounded-3xl px-8 py-8 w-full">
+                    <View style={styles.contentWrapper}>
+                        <View style={styles.contentCard}>
                             {/* Logo */}
                             <Image
                                 source={require("@/assets/images/logosmall.png")}
-                                className="w-14 h-14 mb-4"
+                                style={styles.logo}
                                 resizeMode="contain"
                             />
 
                             {/* Heading */}
-                            <Text style={{ fontWeight: 700 }} className="text-3xl font-extrabold">Get Started</Text>
-                            <Text className="text-lg text-[#00000080] font-normal my-2">
+                            <Text style={styles.heading}>Get Started</Text>
+                            <Text style={styles.subheading}>
                                 Start your journey towards success with our expert-led programs
                             </Text>
 
                             {/* Phone Number Input */}
-                            <View className="w-full flex items-center mt-4">
+                            <View style={styles.phoneInputWrapper}>
                                 <PhoneInput
                                     ref={phoneInputRef}
                                     defaultValue={phoneNumber}
@@ -53,27 +64,28 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
                                     onChangeFormattedText={(text) => setPhoneNumber(text)}
                                     withShadow
                                     autoFocus
-                                    containerStyle={{ width: "100%", height: 50, borderRadius: 10 }}
-                                    textContainerStyle={{ paddingVertical: 0, backgroundColor: "#F1F1F1" }}
+                                    containerStyle={styles.phoneInputContainer}
+                                    textContainerStyle={styles.phoneInputTextContainer}
                                 />
                             </View>
 
                             {/* Sign Up Button */}
-
-                            <Pressable onPress={() => setStep(2)} className="w-full h-12 my-4 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
-                                <Text className="text-white text-lg">Get Startted</Text>
+                            <Pressable
+                                onPress={() => setStep(2)}
+                                style={styles.signUpButton}
+                            >
+                                <Text style={styles.signUpButtonText}>Get Started</Text>
                             </Pressable>
 
-
                             {/* Social Login Buttons */}
-                            <View className="flex flex-row gap-1 justify-between items-center">
-                                <View className="bg-[#1E1E1E] px-10 py-4 rounded-lg">
+                            <View style={styles.socialButtonsContainer}>
+                                <View style={styles.socialButton}>
                                     <AntDesign name="google" size={16} color="white" />
                                 </View>
-                                <View className="bg-[#1E1E1E] px-10 py-4 rounded-lg">
+                                <View style={styles.socialButton}>
                                     <AntDesign name="apple1" size={16} color="white" />
                                 </View>
-                                <View className="bg-[#1E1E1E] px-10 py-4 rounded-lg">
+                                <View style={styles.socialButton}>
                                     <FontAwesome name="facebook-official" size={16} color="white" />
                                 </View>
                             </View>
@@ -84,3 +96,99 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
         </TouchableWithoutFeedback>
     )
 }
+
+const styles = StyleSheet.create({
+    scrollViewContent: {
+        flexGrow: 1
+    },
+    mainContainer: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#F0FFFA',
+        justifyContent: 'flex-start',
+        alignItems: 'center'
+    },
+    backgroundImage: {
+        width: '100%',
+        height: undefined,
+        aspectRatio: 1 // Adjust this based on your image's aspect ratio
+    },
+    contentWrapper: {
+        paddingHorizontal: 24,
+        paddingVertical: 20,
+        width: '100%'
+    },
+    contentCard: {
+        borderRadius: 30,
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 5,
+        paddingHorizontal: 25,
+        paddingVertical: 25
+    },
+    logo: {
+        width: 56,
+        height: 56,
+        marginBottom: 16
+    },
+    heading: {
+        fontSize: 28,
+        fontWeight: '700',
+        color: '#000'
+    },
+    subheading: {
+        fontSize: 16,
+        color: 'rgba(0, 0, 0, 0.5)',
+        fontWeight: 'normal',
+        marginVertical: 8
+    },
+    phoneInputWrapper: {
+        width: '100%',
+        alignItems: 'center',
+        marginTop: 16
+    },
+    phoneInputContainer: {
+        width: '100%',
+        height: 50,
+        borderRadius: 10
+    },
+    phoneInputTextContainer: {
+        paddingVertical: 0,
+        backgroundColor: '#F1F1F1'
+    },
+    signUpButton: {
+        width: '100%',
+        height: 55,
+        marginVertical: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#04714A',
+        borderRadius: 8
+    },
+    signUpButtonPressed: {
+        opacity: 0.8
+    },
+    signUpButtonText: {
+        color: 'white',
+        fontSize: 18
+    },
+    socialButtonsContainer: {
+        flexDirection: 'row',
+        gap: 4,
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    socialButton: {
+        backgroundColor: '#1E1E1E',
+        paddingHorizontal: 30,
+        paddingVertical: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center'
+    }
+});

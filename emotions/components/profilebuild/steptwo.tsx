@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
     View,
     Pressable,
@@ -8,7 +8,8 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    ScrollView
+    ScrollView,
+    StyleSheet
 } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AboutYou from "@/types/aboutyoutypes";
@@ -25,61 +26,57 @@ export default function Steptwo({ step, totalsteps, aboutyou, setAboutYou, setst
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1, backgroundColor: "#F0FFFA" }}
+            style={styles.container}
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <ScrollView
-                    contentContainerStyle={{ flexGrow: 1, padding: 20 }}
+                    contentContainerStyle={styles.scrollViewContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Header Section */}
-                    <View className="flex-row justify-between items-center">
+                    <View style={styles.headerContainer}>
                         <Pressable
                             onPress={() => setstep(2)}
-                            className="bg-white p-2 rounded-lg w-10 h-10 flex items-center justify-center"
+                            style={styles.backButton}
                         >
                             <AntDesign name="arrowleft" size={24} color="black" />
                         </Pressable>
-                        <View className="border p-2 w-10 h-10 flex items-center justify-center rounded-lg">
+                        <View style={styles.stepIndicator}>
                             <Text>{step}/{totalsteps}</Text>
                         </View>
                     </View>
 
                     {/* Title */}
-                    <View style={{ marginTop: 30 }}>
-                        <Text style={{ fontWeight: "700" }} className="text-3xl">About You</Text>
-                        <Text className="text-lg text-[#00000080] font-normal my-2">
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.title}>About You</Text>
+                        <Text style={styles.subtitle}>
                             Personalising The App For Your Emotions
                         </Text>
                     </View>
 
                     {/* Dynamic Form Fields */}
-                    <View style={{ marginTop: 20 }}>
+                    <View style={styles.formContainer}>
                         {Object.keys(aboutyou).map((question, index) => (
-                            <View key={index} style={{ marginBottom: 15 }}>
-                                <Text style={{ fontWeight: "600", marginBottom: 10 }}>{question}</Text>
+                            <View key={index} style={styles.inputWrapper}>
+                                <Text style={styles.questionText}>{question}</Text>
                                 <TextInput
                                     placeholder="Your Answer"
                                     value={aboutyou[question]}
                                     onChangeText={(text) => setAboutYou({ ...aboutyou, [question]: text })}
-                                    style={{
-                                        height: 50,
-                                        backgroundColor: "white",
-                                        borderColor: 'gray',
-                                        borderWidth: 1,
-                                        borderRadius: 30,
-                                        padding: 10
-                                    }}
+                                    style={styles.inputField}
                                 />
                             </View>
                         ))}
                     </View>
 
                     {/* Continue Button */}
-                    <View style={{ marginBottom: 20 }}>
-                        <Pressable onPress={() => setstep(step + 1)} className="w-full h-12 flex justify-center items-center bg-[#04714A] rounded-lg active:opacity-80">
-                            <Text className="text-white text-lg">Continue</Text>
+                    <View style={styles.buttonContainer}>
+                        <Pressable
+                            onPress={() => setstep(step + 1)}
+                            style={styles.continueButton}
+                        >
+                            <Text style={styles.continueButtonText}>Continue</Text>
                         </Pressable>
                     </View>
                 </ScrollView>
@@ -87,3 +84,89 @@ export default function Steptwo({ step, totalsteps, aboutyou, setAboutYou, setst
         </KeyboardAvoidingView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "#F0FFFA"
+    },
+    scrollViewContent: {
+        flexGrow: 1,
+        padding: 20
+    },
+    headerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    },
+    backButton: {
+        backgroundColor: "white",
+        padding: 8,
+        borderRadius: 8,
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    stepIndicator: {
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        padding: 8,
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 8
+    },
+    titleContainer: {
+        marginTop: 30
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: '700'
+    },
+    subtitle: {
+        fontSize: 16,
+        color: 'rgba(0, 0, 0, 0.5)',
+        fontWeight: 'normal',
+        marginVertical: 8
+    },
+    formContainer: {
+        marginTop: 20
+    },
+    inputWrapper: {
+        marginBottom: 15
+    },
+    questionText: {
+        fontWeight: '600',
+        marginBottom: 10,
+        fontSize: 14
+    },
+    inputField: {
+        height: 50,
+        backgroundColor: "white",
+        borderColor: 'gray',
+        borderWidth: 1,
+        borderRadius: 30,
+        padding: 10,
+        fontSize: 14
+    },
+    buttonContainer: {
+        marginBottom: 10
+    },
+    continueButton: {
+        width: '100%',
+        height: 55,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#04714A',
+        borderRadius: 8
+    },
+    continueButtonPressed: {
+        opacity: 0.8
+    },
+    continueButtonText: {
+        color: 'white',
+        fontSize: 18
+    }
+});
