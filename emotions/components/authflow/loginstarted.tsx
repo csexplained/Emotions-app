@@ -55,7 +55,14 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
                             </Text>
 
                             {/* Phone Number Input */}
-                            <View style={styles.phoneInputWrapper}>
+                            <Pressable
+                                onPress={() => {
+                                    setStep(2);
+                                    Keyboard.dismiss(); // This will ensure keyboard is dismissed if it was open
+                                }}
+                                style={styles.phoneInputWrapper}
+                                onStartShouldSetResponder={() => true} // This prevents keyboard from opening
+                            >
                                 <PhoneInput
                                     ref={phoneInputRef}
                                     defaultValue={phoneNumber}
@@ -63,11 +70,13 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
                                     layout="first"
                                     onChangeFormattedText={(text) => setPhoneNumber(text)}
                                     withShadow
-                                    autoFocus
                                     containerStyle={styles.phoneInputContainer}
                                     textContainerStyle={styles.phoneInputTextContainer}
+                                    textInputProps={{
+                                        editable: false // This prevents keyboard from opening when touching the input
+                                    }}
                                 />
-                            </View>
+                            </Pressable>
 
                             {/* Sign Up Button */}
                             <Pressable
