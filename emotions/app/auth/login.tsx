@@ -1,49 +1,48 @@
-import React, { useRef } from "react";
-import { View, KeyboardAvoidingView, Platform } from "react-native";
-import { router } from "expo-router";
-import useAuthStore from "@/store/authStore";
+import React, { useRef, useState } from "react";
+import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from "react-native";
+import PhoneInput from "react-native-phone-number-input";
+import { Link } from "expo-router";
+import AntDesign from '@expo/vector-icons/AntDesign';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import LoginStartedScreen from "@/components/authflow/loginstarted";
 import Loginnumber from "@/components/authflow/Loginnumber";
 import OtpScreen from "@/components/authflow/otpscreen";
 import ThankYouScreen from "@/components/CompleteScreen";
-
+import { sendOtp, verifyOtp } from "@/lib/auth";
 export default function LoginScreen() {
+
+
+    const [step, setStep] = useState(1);
     const phoneInputRef = useRef(null);
-    const {
-        step,
-        phoneNumber,
-        otp,
-        setStep,
-        setPhoneNumber,
-        setOtp,
-        sendOtp,
-        verifyOtp,
-        loading
-    } = useAuthStore();
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [otp, setOtp] = useState("");
+    const [userId, setUserId] = useState(""); // store the userId for OTP verification
+    const [loading, setLoading] = useState(false);
 
-    // Handle OTP sending
     const handleSendOtp = async () => {
-        await sendOtp();
-        setStep(2); // Move to phone number confirmation
+        setLoading(true);
+        const response = await sendOtp(phoneNumber);
+        setLoading(false);
+
+        if (response.success) {
+            setUserId(response.userId || "");
+            setStep(3); // move to OTP screen
+        } else {
+            alert("Failed to send OTP: " + response.error);
+        }
     };
 
-
-    // Handle OTP verification
     const handleVerifyOtp = async () => {
+        if (!userId) return alert("Missing userId");
+        setLoading(true);
+        const response = await verifyOtp(userId, otp);
+        setLoading(false);
 
-        setStep(4); // Move to thank you screen
-
-    };
-
-    // Handle OTP resend
-    const handleResendOtp = async () => {
-        await sendOtp();
-        // Optional: Show toast message that OTP was resent
-    };
-
-    // Handle completion
-    const handleComplete = () => {
-        router.replace('/profile');
+        if (response.success) {
+            setStep(4); // success
+        } else {
+            alert("Invalid OTP: " + response.error);
+        }
     };
 
     return (
@@ -65,23 +64,21 @@ export default function LoginScreen() {
                     phoneNumber={phoneNumber}
                     setStep={setStep}
                     setPhoneNumber={setPhoneNumber}
-                    onContinue={() => setStep(3)}
+                    onContinue={handleSendOtp}
                     loading={loading}
                 />
             )}
             {step === 3 && (
                 <OtpScreen
                     otp={otp}
-                    setStep={setStep}
                     setOtp={setOtp}
-                    onVerify={handleVerifyOtp}
-                    onResend={handleResendOtp}
+                    setstep={setStep}
+                    resendOtp={handleSendOtp}
+                    onSubmit={handleVerifyOtp}
                     loading={loading}
                 />
             )}
-            {step === 4 && (
-                <ThankYouScreen onComplete={() => router.replace('/profile')} />
-            )}
+            {step === 4 && <ThankYouScreen redirectTo="/profile" />}
         </KeyboardAvoidingView>
     );
 }

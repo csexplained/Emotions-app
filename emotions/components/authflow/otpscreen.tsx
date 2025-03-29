@@ -8,28 +8,22 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    StyleSheet,
-    ActivityIndicator
+    StyleSheet
 } from "react-native";
+import { Link, useRouter } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 
 interface OtpScreenProps {
     otp: string;
     setOtp: (otp: string) => void;
-    onVerify: () => void;
-    onResend: () => void;
-    setStep: (step: number) => void;
-    loading: boolean;
+    resendOtp: () => void;
+    setstep: (step: number) => void;
+    onSubmit: () => void;
+    loading: boolean
 }
 
-const OtpScreen: React.FC<OtpScreenProps> = ({
-    otp,
-    setOtp,
-    setStep,
-    onVerify,
-    onResend,
-    loading
-}) => {
+export default function OtpScreen({ otp, setOtp, resendOtp, setstep, loading, onSubmit }: OtpScreenProps) {
+    const router = useRouter();
     const inputRefs = Array(6).fill(null).map(() => useRef<TextInput>(null));
 
     const handleOtpChange = (index: number, value: string) => {
@@ -51,9 +45,10 @@ const OtpScreen: React.FC<OtpScreenProps> = ({
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.innerContainer}>
+                    {/* Top Section */}
                     <View>
                         <Pressable
-                            onPress={() => setStep(2)}
+                            onPress={() => setstep(2)}
                             style={styles.backButton}
                         >
                             <AntDesign name="arrowleft" size={24} color="black" />
@@ -67,6 +62,7 @@ const OtpScreen: React.FC<OtpScreenProps> = ({
                             </Text>
                         </View>
 
+                        {/* OTP Input */}
                         <View style={styles.otpContainer}>
                             {Array(6).fill(0).map((_, index) => (
                                 <TextInput
@@ -82,30 +78,27 @@ const OtpScreen: React.FC<OtpScreenProps> = ({
                         </View>
                         <View style={styles.resendContainer}>
                             <Text style={styles.resendText}>Didn't receive the OTP?</Text>
-                            <Pressable onPress={onResend} style={styles.resendButton}>
+                            <Pressable onPress={resendOtp} style={styles.resendButton}>
                                 <Text style={styles.resendLink}>Resend Code</Text>
                             </Pressable>
                         </View>
                     </View>
 
+                    {/* Bottom Section */}
                     <View style={styles.bottomContainer}>
                         <Pressable
-                            onPress={onVerify}
+                            onPress={onSubmit}
+                            disabled={loading}
                             style={styles.continueButton}
-                            disabled={loading || otp.length !== 6}
                         >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <Text style={styles.continueButtonText}>Verify</Text>
-                            )}
+                            <Text style={styles.continueButtonText}>{loading ? 'Verifying...' : 'Submit OTP'}</Text>
                         </Pressable>
                     </View>
                 </View>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -146,7 +139,7 @@ const styles = StyleSheet.create({
         marginTop: 16
     },
     otpInput: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: "bold",
         backgroundColor: "white",
         borderWidth: 1,
@@ -196,7 +189,5 @@ const styles = StyleSheet.create({
     continueButtonText: {
         color: "white",
         fontSize: 18
-    },
+    }
 });
-
-export default OtpScreen;

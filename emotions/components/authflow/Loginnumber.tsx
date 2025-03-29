@@ -7,29 +7,24 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    StyleSheet,
-    ActivityIndicator
+    StyleSheet
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
+import { Link, useRouter } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 
-interface LoginnumberProps {
-    phoneInputRef: React.RefObject<any>;
+interface LoginStartedScreenProps {
+    phoneInputRef: React.RefObject<PhoneInput>;
     phoneNumber: string;
-    setPhoneNumber: (phone: string) => void;
-    onContinue: () => void;
+    setPhoneNumber: (phoneNumber: string) => void;
     setStep: (step: number) => void;
+    onContinue: () => void;
     loading: boolean;
 }
 
-const Loginnumber: React.FC<LoginnumberProps> = ({
-    phoneInputRef,
-    phoneNumber,
-    setPhoneNumber,
-    onContinue,
-    setStep,
-    loading
-}) => {
+export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber, onContinue, setStep, loading }: LoginStartedScreenProps) {
+    const router = useRouter();
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -37,6 +32,7 @@ const Loginnumber: React.FC<LoginnumberProps> = ({
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.innerContainer}>
+                    {/* Top Section (Back Button & Text) */}
                     <View>
                         <Pressable
                             onPress={() => setStep(1)}
@@ -52,13 +48,14 @@ const Loginnumber: React.FC<LoginnumberProps> = ({
                             </Text>
                         </View>
 
+                        {/* Phone Number Input */}
                         <View style={styles.phoneInputContainer}>
                             <PhoneInput
                                 ref={phoneInputRef}
                                 defaultValue={phoneNumber}
                                 defaultCode="IN"
                                 layout="first"
-                                onChangeFormattedText={setPhoneNumber}
+                                onChangeFormattedText={(text) => setPhoneNumber(text)}
                                 withShadow
                                 autoFocus
                                 containerStyle={styles.phoneInput}
@@ -67,27 +64,23 @@ const Loginnumber: React.FC<LoginnumberProps> = ({
                         </View>
                     </View>
 
+                    {/* Bottom Section (Sign Up Button) */}
                     <View style={styles.buttonContainer}>
                         <Pressable
+                            disabled={loading}
                             onPress={onContinue}
                             style={styles.continueButton}
-                            disabled={loading}
                         >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <Text style={styles.continueButtonText}>Continue</Text>
-                            )}
+                            <Text style={styles.continueButtonText}>{loading ? 'Sending...' : 'Continue'}</Text>
                         </Pressable>
                     </View>
                 </View>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
-};
+}
 
 const styles = StyleSheet.create({
-
     container: {
         flex: 1,
         backgroundColor: "#F0FFFA"
@@ -149,7 +142,5 @@ const styles = StyleSheet.create({
     continueButtonText: {
         color: "white",
         fontSize: 18
-    },
+    }
 });
-
-export default Loginnumber;
