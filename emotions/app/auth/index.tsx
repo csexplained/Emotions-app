@@ -11,9 +11,18 @@ import {
     Keyboard,
     StyleSheet
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
+import useAuthStore from "../../store/authStore";
 
-export default function IndexScreen() {
+export default function AuthIndexScreen() {
+    const { isAuthenticated } = useAuthStore();
+
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+        router.replace('/');
+        return null;
+    }
+
     return (
         <ScrollView
             contentContainerStyle={styles.scrollViewContent}
@@ -39,13 +48,22 @@ export default function IndexScreen() {
                     <Text style={styles.title}>Discover Experiences with a simple swipe</Text>
                     <Text style={styles.subtitle}>Curated activities at your fingertips</Text>
 
-                    <Link href="/auth/login" asChild>
+                    <Link href="/auth/login" asChild replace>
                         <Pressable
                             style={styles.signUpButton}
                         >
                             <Text style={styles.signUpButtonText}>Sign Up</Text>
                         </Pressable>
                     </Link>
+
+                    <View style={styles.loginContainer}>
+                        <Text style={styles.loginText}>Already have an account?</Text>
+                        <Link href="/auth/login" asChild>
+                            <Pressable>
+                                <Text style={styles.loginLink}>Log In</Text>
+                            </Pressable>
+                        </Link>
+                    </View>
                 </View>
             </View>
         </ScrollView>
@@ -117,6 +135,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 14,
+        color : "#1E1E1E8E",
         fontWeight: 'normal',
         textAlign: 'center',
         marginVertical: 14
@@ -136,5 +155,20 @@ const styles = StyleSheet.create({
     signUpButtonText: {
         color: 'white',
         fontSize: 18
+    },
+    loginContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 12
+    },
+    loginText: {
+        fontSize: 14,
+        marginRight: 4
+    },
+    loginLink: {
+        fontSize: 14,
+        color: '#04714A',
+        fontWeight: '600'
     }
 });

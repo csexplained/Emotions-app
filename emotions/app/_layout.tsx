@@ -1,50 +1,59 @@
-import React, { useEffect, useState } from "react";
+import { useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import useAuthStore from '../store/authStore';
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { Slot, useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import LoadingScreen from "../components/loading";
+import { Slot } from "expo-router";
 import "@/global.css";
 
-SplashScreen.preventAutoHideAsync(); // Ensure splash screen doesn't auto-hide
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [appReady, setAppReady] = useState(false);
-  const [loaded] = useFonts({
+  const segments = useSegments();
+  const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const token = false
-        setIsLoggedIn(!!token); // Set login state based on token
+  const { isAuthenticated, loading: authLoading, initializeAuth } = useAuthStore();
 
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate loading delay
+  useEffect(() => {
+    async function prepare() {
+      try {
+        // Initialize auth state (check if user is logged in)
+        await initializeAuth();
       } catch (error) {
-        console.error("Error checking auth:", error);
-        setIsLoggedIn(false);
+        console.error(error);
       } finally {
-        setAppReady(true);
-        await SplashScreen.hideAsync(); // Hide splash **after** app is ready
+        await SplashScreen.hideAsync();
       }
     }
 
-    checkAuth();
+    prepare();
   }, []);
 
   useEffect(() => {
-    if (appReady && isLoggedIn === false) {
-      router.replace("/auth"); // Redirect to auth page
-    }
-  }, [appReady, isLoggedIn]);
+    if (!fontsLoaded || authLoading) return;
 
-  // Show loading screen while app is initializing
-  if (!appReady) {
-    return <LoadingScreen />;
+    const inAuthGroup = segments[0] === 'auth';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // Redirect to the auth page
+      router.replace('/auth');
+    } else if (isAuthenticated && inAuthGroup) {
+      // Redirect away from the auth page
+      router.replace('/');
+    }
+  }, [isAuthenticated, segments, fontsLoaded, authLoading]);
+
+  if (!fontsLoaded || authLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
   return <Slot />;

@@ -10,3 +10,4 @@ client
     .setPlatform('emotions.app')                 // Your app bundle ID
 
 export { client, account };
+

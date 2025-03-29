@@ -8,20 +8,28 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator
 } from "react-native";
-import { Link, useRouter } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 
 interface OtpScreenProps {
     otp: string;
     setOtp: (otp: string) => void;
-    resendOtp: () => void;
-    setstep: (step: number) => void;
+    onVerify: () => void;
+    onResend: () => void;
+    setStep: (step: number) => void;
+    loading: boolean;
 }
 
-export default function OtpScreen({ otp, setOtp, resendOtp, setstep }: OtpScreenProps) {
-    const router = useRouter();
+const OtpScreen: React.FC<OtpScreenProps> = ({
+    otp,
+    setOtp,
+    setStep,
+    onVerify,
+    onResend,
+    loading
+}) => {
     const inputRefs = Array(6).fill(null).map(() => useRef<TextInput>(null));
 
     const handleOtpChange = (index: number, value: string) => {
@@ -43,10 +51,9 @@ export default function OtpScreen({ otp, setOtp, resendOtp, setstep }: OtpScreen
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.innerContainer}>
-                    {/* Top Section */}
                     <View>
                         <Pressable
-                            onPress={() => setstep(2)}
+                            onPress={() => setStep(2)}
                             style={styles.backButton}
                         >
                             <AntDesign name="arrowleft" size={24} color="black" />
@@ -60,9 +67,8 @@ export default function OtpScreen({ otp, setOtp, resendOtp, setstep }: OtpScreen
                             </Text>
                         </View>
 
-                        {/* OTP Input */}
                         <View style={styles.otpContainer}>
-                            {Array(5).fill(0).map((_, index) => (
+                            {Array(6).fill(0).map((_, index) => (
                                 <TextInput
                                     key={index}
                                     ref={inputRefs[index]}
@@ -76,26 +82,30 @@ export default function OtpScreen({ otp, setOtp, resendOtp, setstep }: OtpScreen
                         </View>
                         <View style={styles.resendContainer}>
                             <Text style={styles.resendText}>Didn't receive the OTP?</Text>
-                            <Pressable onPress={resendOtp} style={styles.resendButton}>
+                            <Pressable onPress={onResend} style={styles.resendButton}>
                                 <Text style={styles.resendLink}>Resend Code</Text>
                             </Pressable>
                         </View>
                     </View>
 
-                    {/* Bottom Section */}
                     <View style={styles.bottomContainer}>
                         <Pressable
-                            onPress={() => setstep(4)}
+                            onPress={onVerify}
                             style={styles.continueButton}
+                            disabled={loading || otp.length !== 6}
                         >
-                            <Text style={styles.continueButtonText}>Continue</Text>
+                            {loading ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={styles.continueButtonText}>Verify</Text>
+                            )}
                         </Pressable>
                     </View>
                 </View>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -136,14 +146,14 @@ const styles = StyleSheet.create({
         marginTop: 16
     },
     otpInput: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: "bold",
         backgroundColor: "white",
         borderWidth: 1,
         borderColor: "#04714A",
         borderRadius: 8,
-        width: 55,
-        height: 55,
+        width: 45,
+        height: 45,
         margin: 5,
         textAlign: "center"
     },
@@ -186,5 +196,7 @@ const styles = StyleSheet.create({
     continueButtonText: {
         color: "white",
         fontSize: 18
-    }
+    },
 });
+
+export default OtpScreen;

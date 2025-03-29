@@ -9,21 +9,38 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
 import { Link } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import useAuthStore from '@/store/authStore';
 
 interface LoginStartedScreenProps {
-    phoneInputRef: React.RefObject<PhoneInput>;
+    phoneInputRef: React.RefObject<any>;
     phoneNumber: string;
-    setPhoneNumber: (phoneNumber: string) => void;
+    setPhoneNumber: (phone: string) => void;
     setStep: (step: number) => void;
 }
 
-export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhoneNumber, setStep }: LoginStartedScreenProps) {
+const LoginStartedScreen: React.FC<LoginStartedScreenProps> = ({
+    phoneInputRef,
+    phoneNumber,
+    setPhoneNumber,
+    setStep
+}) => {
+    const { socialLogin, loading } = useAuthStore();
+
+    const handleSocialLogin = async (provider: 'google' | 'apple' | 'facebook') => {
+        try {
+            await socialLogin(provider);
+        } catch (error) {
+            console.error('Social login failed:', error);
+        }
+    };
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ScrollView
@@ -31,80 +48,96 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.mainContainer}>
-                    {/* Background Image */}
                     <Image
                         source={require("@/assets/images/getstartedpagebg.png")}
                         style={styles.backgroundImage}
                         resizeMode="cover"
                     />
 
-                    {/* Content Wrapper */}
                     <View style={styles.contentWrapper}>
                         <View style={styles.contentCard}>
-                            {/* Logo */}
                             <Image
                                 source={require("@/assets/images/logosmall.png")}
                                 style={styles.logo}
                                 resizeMode="contain"
                             />
 
-                            {/* Heading */}
                             <Text style={styles.heading}>Get Started</Text>
                             <Text style={styles.subheading}>
                                 Start your journey towards success with our expert-led programs
                             </Text>
 
-                            {/* Phone Number Input */}
                             <Pressable
                                 onPress={() => {
                                     setStep(2);
-                                    Keyboard.dismiss(); // This will ensure keyboard is dismissed if it was open
+                                    Keyboard.dismiss();
                                 }}
                                 style={styles.phoneInputWrapper}
-                                onStartShouldSetResponder={() => true} // This prevents keyboard from opening
+                                onStartShouldSetResponder={() => true}
                             >
                                 <PhoneInput
                                     ref={phoneInputRef}
                                     defaultValue={phoneNumber}
                                     defaultCode="IN"
                                     layout="first"
-                                    onChangeFormattedText={(text) => setPhoneNumber(text)}
+                                    onChangeFormattedText={setPhoneNumber}
                                     withShadow
                                     containerStyle={styles.phoneInputContainer}
                                     textContainerStyle={styles.phoneInputTextContainer}
                                     textInputProps={{
-                                        editable: false // This prevents keyboard from opening when touching the input
+                                        editable: false
                                     }}
                                 />
                             </Pressable>
 
-                            {/* Sign Up Button */}
                             <Pressable
                                 onPress={() => setStep(2)}
                                 style={styles.signUpButton}
+                                disabled={loading}
                             >
-                                <Text style={styles.signUpButtonText}>Get Started</Text>
+                                {loading ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <Text style={styles.signUpButtonText}>Get Started</Text>
+                                )}
                             </Pressable>
 
-                            {/* Social Login Buttons */}
+                            <View style={styles.dividerContainer}>
+                                <View style={styles.dividerLine} />
+                                <Text style={styles.dividerText}>or continue with</Text>
+                                <View style={styles.dividerLine} />
+                            </View>
+
                             <View style={styles.socialButtonsContainer}>
-                                <View style={styles.socialButton}>
+                                <Pressable
+                                    onPress={() => handleSocialLogin('google')}
+                                    style={styles.socialButton}
+                                    disabled={loading}
+                                >
                                     <AntDesign name="google" size={16} color="white" />
-                                </View>
-                                <View style={styles.socialButton}>
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => handleSocialLogin('apple')}
+                                    style={styles.socialButton}
+                                    disabled={loading}
+                                >
                                     <AntDesign name="apple1" size={16} color="white" />
-                                </View>
-                                <View style={styles.socialButton}>
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => handleSocialLogin('facebook')}
+                                    style={styles.socialButton}
+                                    disabled={loading}
+                                >
                                     <FontAwesome name="facebook-official" size={16} color="white" />
-                                </View>
+                                </Pressable>
                             </View>
                         </View>
                     </View>
                 </View>
             </ScrollView>
         </TouchableWithoutFeedback>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     scrollViewContent: {
@@ -116,6 +149,20 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0FFFA',
         justifyContent: 'flex-start',
         alignItems: 'center'
+    },
+    dividerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 20,
+    },
+    dividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#E5E7EB',
+    },
+    dividerText: {
+        marginHorizontal: 10,
+        color: '#6B7280',
     },
     backgroundImage: {
         width: '100%',
@@ -199,5 +246,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center'
-    }
+    },
 });
+
+export default LoginStartedScreen;

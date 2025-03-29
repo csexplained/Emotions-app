@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import LottieView from "lottie-react-native";
-import { useRouter } from "expo-router";
+import { RelativePathString, useRouter } from "expo-router";
+import useAuthStore from "@/store/authStore";
 
-export default function ThankYouScreen({ redirectTo = "/" }: { redirectTo: string }) {
+interface ThankYouScreenProps {
+    onComplete?: () => void;
+    redirectTo?: string;
+}
+
+export default function ThankYouScreen({
+    onComplete,
+    redirectTo = "/"
+}: ThankYouScreenProps) {
     const router = useRouter();
     const [time, setTime] = useState(5);
+    const { user } = useAuthStore();
 
     useEffect(() => {
         // Countdown timer
@@ -20,14 +30,18 @@ export default function ThankYouScreen({ redirectTo = "/" }: { redirectTo: strin
 
         // Redirect after timeout
         const timeout = setTimeout(() => {
-            router.push(redirectTo as any);
+            if (onComplete) {
+                onComplete();
+            } else {
+                router.replace(redirectTo as RelativePathString);
+            }
         }, 5000);
 
         return () => {
             clearInterval(interval);
             clearTimeout(timeout);
         };
-    }, [redirectTo, router]);
+    }, [redirectTo, router, onComplete]);
 
     return (
         <View style={styles.container}>
@@ -48,6 +62,9 @@ export default function ThankYouScreen({ redirectTo = "/" }: { redirectTo: strin
             />
 
             {/* Success Message */}
+            <Text style={styles.successText}>
+                Welcome {user?.name || ''}!
+            </Text>
             <Text style={styles.redirectText}>
                 Redirecting in {time} seconds...
             </Text>
@@ -64,17 +81,24 @@ const styles = StyleSheet.create({
     },
     confettiAnimation: {
         position: "absolute",
-        width: "100%",
-        height: "100%",
+        width: "90%",
+        height: "90%",
     },
     checkmarkAnimation: {
-        width: 150,
-        height: 150
+        width: 200,
+        height: 200
+    },
+    successText: {
+        fontSize: 24,
+        fontWeight: "bold",
+        color: "white",
+        marginBottom: 20,
+        textAlign: "center"
     },
     redirectText: {
         fontSize: 16,
         color: "white",
         textAlign: "center",
-        marginTop: 10
+        marginTop: 20
     }
 });
