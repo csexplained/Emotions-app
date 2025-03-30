@@ -1,11 +1,9 @@
-
-interface userdata {
-    firstname: string;
-    lastname: string;
-    gender: string;
-    mobileNumber: string;
+// @/store/authStore.ts
+export interface User {
+    $id: string;
+    name: string;
     email: string;
-    city: string;
-    country: string;
+    phone?: string;
+    emailVerification: boolean;
+    phoneVerification: boolean;
 }
-export default userdata;

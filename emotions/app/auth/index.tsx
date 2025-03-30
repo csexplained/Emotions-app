@@ -12,10 +12,12 @@ import {
     StyleSheet
 } from "react-native";
 import { Link, router } from "expo-router";
-import useAuthStore from "../../store/authStore";
+import { useAuthStore } from "../../store/authStore";
+import { User } from "@/types/user.types";
 
 export default function AuthIndexScreen() {
-    const { isAuthenticated } = useAuthStore();
+    const user = useAuthStore((state: { user: User | null; isAuthenticated: boolean }) => state.user);
+    const isAuthenticated = useAuthStore((state: { user: User | null; isAuthenticated: boolean }) => state.isAuthenticated);
 
     // Redirect if already authenticated
     if (isAuthenticated) {
@@ -135,7 +137,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 14,
-        color : "#1E1E1E8E",
+        color: "#1E1E1E8E",
         fontWeight: 'normal',
         textAlign: 'center',
         marginVertical: 14
