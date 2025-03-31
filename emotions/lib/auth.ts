@@ -174,16 +174,8 @@ export const loginOrSignUpWithEmail = async (
             loginError?.type === 'user_invalid_credentials') {
 
             try {
-                const randomString = Math.random().toString(36).substring(2, 15);
-                const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
-                // Ensure it starts with a letter if the sanitized string is empty or starts with a special char
-                const prefix = sanitizedPrefix ?
-                    (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) :
-                    'user';
-                // Combine and ensure total length is within 36 chars
-                const userId = `${prefix}_${randomString}`.substring(0, 36);
-                console.log(userId)
-                await account.create(userId, email, password, name);
+
+                await account.create(ID.unique(), email, password, name);
 
                 // Add small delay between signup and login to avoid rate limiting
                 await new Promise(resolve => setTimeout(resolve, 500));
