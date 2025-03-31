@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Link, router } from "expo-router";
 import { useAuthStore } from "../../store/authStore";
-import { User } from "@/types/user.types";
+import { User } from "@/types/auth";
 
 export default function AuthIndexScreen() {
     const user = useAuthStore((state: { user: User | null; isAuthenticated: boolean }) => state.user);
@@ -21,7 +21,7 @@ export default function AuthIndexScreen() {
 
     // Redirect if already authenticated
     if (isAuthenticated) {
-        router.replace('/');
+        router.replace('/(tabs)');
         return null;
     }
 
@@ -54,15 +54,15 @@ export default function AuthIndexScreen() {
                         <Pressable
                             style={styles.signUpButton}
                         >
-                            <Text style={styles.signUpButtonText}>Sign Up</Text>
+                            <Text style={styles.signUpButtonText}>Sign Via OTP</Text>
                         </Pressable>
                     </Link>
 
                     <View style={styles.loginContainer}>
                         <Text style={styles.loginText}>Already have an account?</Text>
-                        <Link href="/auth/login" asChild>
+                        <Link href="/auth/signup" asChild>
                             <Pressable>
-                                <Text style={styles.loginLink}>Log In</Text>
+                                <Text style={styles.loginLink}>Sign Via Email</Text>
                             </Pressable>
                         </Link>
                     </View>
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     topSection: {
         backgroundColor: '#F0FFFA',
         width: '100%',
-        height: '70%'
+        height: '65%'
     },
     imageContainer: {
         flex: 1,

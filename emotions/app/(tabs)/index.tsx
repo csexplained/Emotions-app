@@ -1,28 +1,16 @@
 import React from "react";
 import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput } from "react-native";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import { Link, router } from "expo-router";
-import Card from "@/components/Infotab/AngerCard";
-import Humanicon from "@/assets/icons/humanicon";
+import { Link } from "expo-router";
 import Categories from '@/components/Home/Categories';
-import cardsData from '@/Data/Categorys'
-import { Entypo, Feather } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import NotificationIcon from "@/assets/icons/Bellicon"
 import ActivityCard from "@/components/Home/ActivityCard";
-import CardData from "@/types/Carddata.types";
 import activitiesData from "@/Data/activity";
-
+import { useAuthStore } from "@/store/authStore";
 
 export default function Indexscreen() {
-  const chunkArray = (array: CardData[], chunkSize: number) => {
-    const result = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
-      result.push(array.slice(i, i + chunkSize));
-    }
-    return result;
-  };
 
-  const cardRows = chunkArray(cardsData, 2);
+  const user = useAuthStore(state => state.user);
 
 
   return (
@@ -39,7 +27,7 @@ export default function Indexscreen() {
             style={styles.logo}
           />
           <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Bhanu Pratap Singh</Text>
+            <Text style={styles.headerTitle}>{user?.name}</Text>
             <View style={styles.flexbox}><Text style={styles.statusText}> <Text style={{ color: "#04714A", marginRight: 2 }}>• </Text>Meditation</Text></View>
           </View>
         </View>

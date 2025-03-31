@@ -8,18 +8,17 @@ import { User } from '@/types/auth';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// Initialize Google auth request outside the function
-const useGoogleAuthRequest = Google.useAuthRequest({
-   
-    redirectUri: makeRedirectUri({
-        scheme: "com.newral.emotions",
-        path: 'oauth',
-    }),
-});
-
 export const useGoogleAuth = () => {
-    const [request, response, promptAsync] = useGoogleAuthRequest;
-    const { setUser } = useAuthStore.getState();
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+        scopes: ['openid', 'profile', 'email'],
+        redirectUri: makeRedirectUri({
+            scheme: "com.newral.emotions",
+            path: 'oauth',
+        }),
+    });
+
+    const { setUser } = useAuthStore();
 
     const signInWithGoogle = async () => {
         try {
@@ -30,19 +29,24 @@ export const useGoogleAuth = () => {
 
             const { id_token } = result.params;
 
-            // Create session with Appwrite
             await account.createOAuth2Session(
                 'google' as OAuthProvider,
-                makeRedirectUri({ scheme: 'your.app.scheme', path: 'success' }),
-                makeRedirectUri({ scheme: 'your.app.scheme', path: 'failure' }),
+                makeRedirectUri({ scheme: 'com.newral.emotions', path: 'success' }),
+                makeRedirectUri({ scheme: 'com.newral.emotions', path: 'failure' }),
                 [id_token]
             );
 
-            // Get and set user data
-            const user = await account.get() as User;
-            setUser(user);
+            const user = await account.get();
+            const formattedUser: User = {
+                ...user,
+                $createdAt: user.$createdAt,
+                createdAt: user.$createdAt ?? new Date().toISOString(),
+                emailVerification: user.emailVerification || false,
+                phoneVerification: user.phoneVerification || false
+            };
 
-            return { success: true, user };
+            setUser(formattedUser);
+            return { success: true, user: formattedUser };
         } catch (error: any) {
             return {
                 success: false,
@@ -60,7 +64,7 @@ export const sendOtp = async (phone: string) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-appwrite-project': '67e69028003ce5b90fe1',
+                'x-appwrite-project': `${process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || ''}`,
             },
             body: JSON.stringify({
                 userId: ID.unique(),
@@ -91,12 +95,19 @@ export const verifyOtp = async (userId: string, secret: string) => {
 
     try {
         await account.updatePhoneSession(userId, secret);
-        const user = await account.get() as User;
-        setUser(user);
+        const user = await account.get();
+        const formattedUser: User = {
+            ...user,
+            $createdAt: user.$createdAt,
+            createdAt: user.$createdAt || new Date().toISOString(),
+            emailVerification: user.emailVerification || false,
+            phoneVerification: user.phoneVerification || false
+        };
 
+        setUser(formattedUser);
         return {
             success: true,
-            user
+            user: formattedUser
         };
     } catch (error: any) {
         console.error("OTP Verification Error:", error);
@@ -118,6 +129,113 @@ export const logout = async () => {
         return {
             success: false,
             error: error.message || "Failed to logout",
+        };
+    }
+};
+export const loginOrSignUpWithEmail = async (
+    email: string,
+    password: string,
+    name: string = 'User'
+) => {
+    const { setUser } = useAuthStore.getState();
+
+    // Validate email format before making any requests
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return {
+            success: false,
+            error: "Please enter a valid email address",
+        };
+    }
+
+    // Validate password requirements
+    if (password.length < 6) {
+        return {
+            success: false,
+            error: "Password must be at least 6 characters",
+        };
+    }
+
+    try {
+        // First try to login
+        await account.createEmailPasswordSession(email, password)
+    } catch (loginError: any) {
+        // Handle rate limiting
+        if (loginError?.code === 429 || loginError?.message?.includes('Rate limit')) {
+            return {
+                success: false,
+                error: "Too many attempts. Please wait before trying again.",
+                isRateLimited: true,
+            };
+        }
+
+        // Only attempt signup if the error is specifically about invalid credentials
+        if (loginError?.message?.includes('Invalid credentials') ||
+            loginError?.type === 'user_invalid_credentials') {
+
+            try {
+                const randomString = Math.random().toString(36).substring(2, 15);
+                const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
+                // Ensure it starts with a letter if the sanitized string is empty or starts with a special char
+                const prefix = sanitizedPrefix ?
+                    (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) :
+                    'user';
+                // Combine and ensure total length is within 36 chars
+                const userId = `${prefix}_${randomString}`.substring(0, 36);
+                console.log(userId)
+                await account.create(userId, email, password, name);
+
+                // Add small delay between signup and login to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                await account.createSession(email, password);
+            } catch (signupError: any) {
+                console.error("Signup failed:", signupError);
+
+                if (signupError?.code === 429) {
+                    return {
+                        success: false,
+                        error: "Too many signup attempts. Please wait.",
+                        isRateLimited: true,
+                    };
+                }
+
+                return {
+                    success: false,
+                    error: signupError.message || "Account creation failed",
+                };
+            }
+        } else {
+            // For all other errors
+            console.log("Login error:", loginError);
+            return {
+                success: false,
+                error: loginError.message || "Authentication failed",
+            };
+        }
+    }
+
+    try {
+        // Success case - get user data
+        const user = await account.get();
+        const formattedUser: User = {
+            ...user,
+            $createdAt: user.$createdAt,
+            createdAt: user.$createdAt ?? new Date().toISOString(),
+            emailVerification: user.emailVerification || false,
+            phoneVerification: user.phoneVerification || false,
+        };
+
+        setUser(formattedUser);
+        return {
+            success: true,
+            user: formattedUser,
+        };
+    } catch (getUserError: any) {
+        console.error("Failed to get user:", getUserError);
+        return {
+            success: false,
+            error: getUserError.message || "Failed to load user profile",
         };
     }
 };

@@ -5,19 +5,20 @@ import { Link } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Stepone from "@/components/profilebuild/stepone";
-import userdata from "@/types/user.types";
+import { User } from "@/types/auth";
 import Steptwo from "@/components/profilebuild/steptwo";
 import AboutYou from "@/types/aboutyoutypes";
 import ThankYouScreen from "@/components/CompleteScreen";
+import { Userprofile } from "@/types/userprofile.types";
 export default function Indexscreen() {
     const [total, setTotal] = useState(3);
     const [step, setStep] = useState(1);
-    const [userdata, setuserData] = useState<userdata>({
+    const [userdata, setuserData] = useState<Userprofile>({
+        userid: "",
         firstname: "",
         lastname: "",
         gender: "",
         mobileNumber: "",
-        email: "",
         city: "",
         country: "",
     });

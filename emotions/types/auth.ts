@@ -1,4 +1,3 @@
-// @/store/authStore.ts
 export interface User {
     $id: string;
     name: string;
@@ -6,6 +5,9 @@ export interface User {
     phone?: string;
     emailVerification: boolean;
     phoneVerification: boolean;
+    preferences?: Record<string, any>;
+    $createdAt?: string;
+    createdAt: string;
 }
 
 export interface AuthState {

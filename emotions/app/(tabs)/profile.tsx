@@ -5,18 +5,18 @@ import { Link } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Stepone from "@/components/ProfileEdit/stepone";
-import userdata from "@/types/user.types";
+import userdata from "@/types/userprofile.types";
 import Steptwo from "@/components/profilebuild/steptwo";
 import AboutYou from "@/types/aboutyoutypes";
 import ThankYouScreen from "@/components/CompleteScreen";
 export default function Indexscreen() {
 
   const [userdata, setuserData] = useState<userdata>({
+    userId: "",
     firstname: "Bhanu",
     lastname: "Pratap",
     gender: "male",
     mobileNumber: "9999999999",
-    email: "test@test.com",
     city: "Jaipur",
     country: "India",
   });

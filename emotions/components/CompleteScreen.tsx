@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import LottieView from "lottie-react-native";
 import { RelativePathString, useRouter } from "expo-router";
-import useAuthStore from "@/store/authStore";
+
 
 interface ThankYouScreenProps {
     onComplete?: () => void;
@@ -15,7 +15,6 @@ export default function ThankYouScreen({
 }: ThankYouScreenProps) {
     const router = useRouter();
     const [time, setTime] = useState(5);
-    const { user } = useAuthStore();
 
     useEffect(() => {
         // Countdown timer
@@ -61,10 +60,6 @@ export default function ThankYouScreen({
                 style={styles.checkmarkAnimation}
             />
 
-            {/* Success Message */}
-            <Text style={styles.successText}>
-                Welcome {user?.name || ''}!
-            </Text>
             <Text style={styles.redirectText}>
                 Redirecting in {time} seconds...
             </Text>

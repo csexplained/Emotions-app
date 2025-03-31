@@ -19,8 +19,10 @@ import { router } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import * as ImagePicker from 'expo-image-picker';
-import userdata from "@/types/user.types";
+import userdata from "@/types/userprofile.types";
 import LogoutIcon from "@/assets/icons/Logout";
+
+import { useAuthStore } from '@/store/authStore'; // Add this import
 
 interface OtpScreenProps {
     userdata: userdata;
@@ -32,6 +34,9 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [profileImage, setProfileImage] = useState(require("@/assets/images/chatlogo.png"));
 
+    // Get the clearAuth function from your auth store
+    const clearAuth = useAuthStore((state) => state.clearAuth);
+
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -42,6 +47,17 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
 
         if (!result.canceled) {
             setProfileImage({ uri: result.assets[0].uri });
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            setShowLogoutModal(false);
+            await clearAuth(); // Clear the auth state
+            router.replace('/auth'); // Navigate to login screen
+        } catch (error) {
+            console.error('Logout failed:', error);
+            Alert.alert('Logout Error', 'Failed to logout. Please try again.');
         }
     };
 
@@ -191,8 +207,7 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                         <TextInput
                             placeholder="Your Email"
                             keyboardType="email-address"
-                            value={userdata.email}
-                            onChangeText={(text) => setUserData({ ...userdata, email: text })}
+                            editable={false}
                             style={styles.textInput}
                         />
                     </View>
@@ -238,10 +253,7 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
 
                                     <TouchableOpacity
                                         style={styles.logoutConfirmButton}
-                                        onPress={() => {
-                                            setShowLogoutModal(false);
-                                            // Handle logout logic
-                                        }}
+                                        onPress={handleLogout} // Use the new handleLogout function
                                     >
                                         <Text style={styles.logoutConfirmButtonText}>
                                             Yes, Logout
