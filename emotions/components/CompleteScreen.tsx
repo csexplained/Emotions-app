@@ -11,7 +11,7 @@ interface ThankYouScreenProps {
 
 export default function ThankYouScreen({
     onComplete,
-    redirectTo = "/"
+    redirectTo = "/auth/profile"
 }: ThankYouScreenProps) {
     const router = useRouter();
     const [time, setTime] = useState(5);

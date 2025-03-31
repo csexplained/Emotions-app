@@ -14,13 +14,15 @@ export default function AuthIndexScreen() {
     const router = useRouter();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
+
     useEffect(() => {
         if (isAuthenticated) {
             router.replace('/(tabs)');
         }
-    }, [isAuthenticated]);
+    }, []);
 
     if (isAuthenticated) return null;
+
 
     return (
         <ScrollView
