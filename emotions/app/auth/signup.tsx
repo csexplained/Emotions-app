@@ -114,7 +114,7 @@ export default function EmailLoginScreen() {
         retryDelay={retryDelay}
       />
     ),
-    3: <ThankYouScreen redirectTo="/profile" />
+    3: <ThankYouScreen redirectTo="" />
   };
 
   return (

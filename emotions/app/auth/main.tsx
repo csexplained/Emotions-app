@@ -8,19 +8,15 @@ import {
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useAuthStore } from "../../store/authStore";
-import { useEffect } from "react";
 
 export default function AuthIndexScreen() {
     const router = useRouter();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-    useEffect(() => {
-        if (isAuthenticated) {
-            router.replace('/(tabs)');
-        }
-    }, [isAuthenticated]);
-
-    if (isAuthenticated) return null;
+    if (isAuthenticated) {
+        router.replace('/(tabs)');
+        return null;
+    }
 
     return (
         <ScrollView
@@ -48,7 +44,10 @@ export default function AuthIndexScreen() {
                     <Text style={styles.subtitle}>Curated activities at your fingertips</Text>
 
                     <Link href="/auth/login" asChild>
-                        <Pressable style={styles.signUpButton}>
+                        <Pressable
+                            style={styles.signUpButton}
+                            onPress={() => router.push('/auth/login')}
+                        >
                             <Text style={styles.signUpButtonText}>Sign Via OTP</Text>
                         </Pressable>
                     </Link>

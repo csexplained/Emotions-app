@@ -1,12 +1,12 @@
 import { useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
-import { Slot } from "expo-router";
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { Slot } from 'expo-router';
 import { useAuthStore } from '@/store/authStore';
-import "@/global.css";
-import { ActivityIndicator, View, Text } from 'react-native';
+import '@/global.css';
+import { View, Text } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
 import LoadingScreen from '@/components/Loading';
 
@@ -19,12 +19,12 @@ export default function RootLayout() {
 
   // Load fonts
   const [fontsLoaded, fontError] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   // App state
   const [appReady, setAppReady] = useState(false);
-  const { user, isAuthenticated, sessionChecked, initializeAuth } = useAuthStore();
+  const { isAuthenticated, sessionChecked, initializeAuth } = useAuthStore();
 
   // Initialize auth and app
   useEffect(() => {
@@ -49,32 +49,37 @@ export default function RootLayout() {
       isMounted = false;
     };
   }, []);
-
-  // Memoized routing logic to prevent unnecessary re-renders
   const shouldRedirect = useMemo(() => {
     if (!appReady || !fontsLoaded || !sessionChecked) return null;
 
-    const inAuthGroup = segments[0] === 'auth';
-    const inProtectedGroup = !['(auth)', '(public)'].includes(segments[0]);
+    // console.log('🧭 Segments:', segments);
+    //console.log('✅ isAuthenticated:', isAuthenticated);
+
+    const group = segments[0]; // top-level route group like 'auth' or '(tabs)'
+    const isInAuthGroup = group === 'auth';
+    const isProtected = group !== 'auth'; // everything outside auth is protected
+    const isAuthIndex = segments.length === 1 && group === 'auth';
 
     return {
-      redirectToAuth: !isAuthenticated && inProtectedGroup,
-      redirectToHome: isAuthenticated && inAuthGroup,
+      redirectToAuth: !isAuthenticated && isProtected,
+      redirectToHome: isAuthenticated && isAuthIndex,
     };
   }, [isAuthenticated, segments, fontsLoaded, appReady, sessionChecked]);
 
-  // Handle routing based on auth state
+  // Handle redirects
   useEffect(() => {
     if (!shouldRedirect) return;
 
     if (shouldRedirect.redirectToAuth) {
-      router.replace('/auth/signup');
+      console.log('🔐 Redirecting to /auth');
+      router.replace('/auth');
     } else if (shouldRedirect.redirectToHome) {
+      console.log('🏠 Redirecting to /(tabs)');
       router.replace('/(tabs)');
     }
   }, [shouldRedirect]);
 
-  // Show loading indicator while resources are loading
+  // Show splash or loading screen
   if (!appReady || !fontsLoaded || !sessionChecked) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -92,7 +97,7 @@ export default function RootLayout() {
     );
   }
 
-  // Main render with error boundary
+  // Render app
   return (
     <ThemeProvider value={DefaultTheme}>
       <ErrorBoundary

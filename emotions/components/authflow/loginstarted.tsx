@@ -9,12 +9,23 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    StyleSheet
+    StyleSheet,
+    LogBox
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
 import { Link } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+
+
+// Suppress the specific warning
+LogBox.ignoreLogs([
+    'CountryModal: Support for defaultProps',
+    'CountryList: Support for defaultProps',
+    'CountryItem: Support for defaultProps',
+    'Support for defaultProps will be removed from function components'
+]);
+
 
 interface LoginStartedScreenProps {
     phoneInputRef: React.RefObject<PhoneInput>;
