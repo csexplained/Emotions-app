@@ -9,23 +9,27 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     ScrollView,
-    StyleSheet
+    StyleSheet,
+    TouchableOpacity,
+    ActivityIndicator
 } from "react-native";
 import { Link } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Checkbox from "expo-checkbox";
-import userdata from "@/types/user.types";
-
+import userdata from "@/types/userprofile.types"
 interface OtpScreenProps {
     userdata: userdata;
     setUserData: (userdata: userdata) => void;
-    setstep: (step: number) => void;
-    totalsteps: number;
     step: number;
+    totalsteps: number;
+    setstep: (step: number) => void;
+    onSubmit: () => void;
+    isSubmitting: boolean;
+    error: string | null;
 }
 
-export default function Stepone({ step, totalsteps, userdata, setUserData, setstep }: OtpScreenProps) {
+export default function Stepone({ step, totalsteps, onSubmit, isSubmitting, error, userdata, setUserData, setstep }: OtpScreenProps) {
     const [isChecked, setIsChecked] = useState(false);
 
     return (
@@ -122,8 +126,7 @@ export default function Stepone({ step, totalsteps, userdata, setUserData, setst
                         <TextInput
                             placeholder="Your Email"
                             keyboardType="email-address"
-                            value={userdata.email}
-                            onChangeText={(text) => setUserData({ ...userdata, email: text })}
+                            editable={false}
                             style={styles.textInput}
                         />
                     </View>
@@ -161,13 +164,19 @@ export default function Stepone({ step, totalsteps, userdata, setUserData, setst
                         </Text>
                     </View>
 
-                    <View style={styles.buttonContainer}>
-                        <Pressable
-                            onPress={() => setstep(step + 1)}
-                            style={styles.continueButton}
+                    <View style={styles.submitContainer}>
+                        {error && <Text style={styles.errorText}>{error}</Text>}
+                        <TouchableOpacity
+                            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                            onPress={onSubmit}
+                            disabled={isSubmitting}
                         >
-                            <Text style={styles.continueButtonText}>Continue</Text>
-                        </Pressable>
+                            {isSubmitting ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>Submit Profile</Text>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </TouchableWithoutFeedback>
@@ -306,6 +315,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         marginTop: 20
     },
+
     continueButton: {
         width: '100%',
         height: 55,
@@ -320,5 +330,30 @@ const styles = StyleSheet.create({
     continueButtonText: {
         color: 'white',
         fontSize: 18
-    }
+    },
+    submitContainer: {
+        marginTop: 30,
+        marginBottom: 40,
+    },
+    submitButton: {
+        width: '100%',
+        height: 55,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#04714A',
+        borderRadius: 8
+    },
+    submitButtonDisabled: {
+        backgroundColor: '#014a30',
+    },
+    submitButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    errorText: {
+        color: 'red',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
 });

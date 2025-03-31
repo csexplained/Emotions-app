@@ -36,6 +36,7 @@ const UserProfileService = {
                 userProfileCollectionId,
                 profileData.userId, // Using userId as document ID
                 {
+                    userid: profileData.userId,
                     firstname: profileData.firstname,
                     lastname: profileData.lastname,
                     gender: profileData.gender || '',
