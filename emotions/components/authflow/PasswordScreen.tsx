@@ -4,12 +4,14 @@ import {
     Text,
     TextInput,
     Pressable,
-    StyleSheet,
+    ScrollView,
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    ActivityIndicator
+    ActivityIndicator,
+    StyleSheet,
+    Image
 } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 
@@ -31,80 +33,110 @@ export default function PasswordScreen({
     retryDelay = 0
 }: PasswordScreenProps) {
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
-        >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={styles.innerContainer}>
-                    {/* Top Section */}
-                    <View>
-                        <Pressable
-                            onPress={onBack}
-                            style={styles.backButton}
-                        >
-                            <AntDesign name="arrowleft" size={24} color="black" />
-                        </Pressable>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <ScrollView
+                contentContainerStyle={styles.scrollViewContent}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View style={styles.mainContainer}>
+                    {/* Background Image */}
+                    <Image
+                        source={require("@/assets/images/getstartedpagebg.png")}
+                        style={styles.backgroundImage}
+                        resizeMode="cover"
+                    />
 
-                        <View style={styles.textContainer}>
-                            <Text style={styles.title}>Enter Your Password</Text>
-                            <Text style={styles.subtitle}>
-                                Secure your account with a strong password
-                            </Text>
-                        </View>
+                    {/* Content Wrapper */}
+                    <View style={styles.contentWrapper}>
+                        <View style={styles.contentCard}>
+                            {/* Back Button */}
+                            <Pressable onPress={onBack} style={styles.backButton}>
+                                <AntDesign name="arrowleft" size={24} color="black" />
+                            </Pressable>
 
-                        <TextInput
-                            placeholder="••••••••"
-                            placeholderTextColor="#999"
-                            secureTextEntry
-                            value={password}
-                            onChangeText={setPassword}
-                            style={styles.input}
-                            editable={retryDelay <= 0}
-                        />
+                            {/* Heading */}
+                            <View style={styles.textContainer}>
+                                <Text style={styles.heading}>Enter Your Password</Text>
+                                <Text style={styles.subheading}>
+                                    Secure your account with a strong password
+                                </Text>
+                            </View>
 
-                        {retryDelay > 0 && (
-                            <Text style={styles.retryText}>
-                                Try again in {retryDelay} seconds
-                            </Text>
-                        )}
-                    </View>
+                            {/* Password Input */}
+                            <View style={styles.inputWrapper}>
+                                <TextInput
+                                    placeholder="••••••••"
+                                    placeholderTextColor="#999"
+                                    secureTextEntry
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    style={styles.input}
+                                    editable={retryDelay <= 0}
+                                />
+                            </View>
 
-                    {/* Bottom Section */}
-                    <View style={styles.bottomContainer}>
-                        <Pressable
-                            onPress={onSubmit}
-                            style={styles.continueButton}
-                            disabled={loading || retryDelay > 0}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="white" />
-                            ) : (
-                                <>
-                                    <Text style={styles.continueButtonText}>
+                            {retryDelay > 0 && (
+                                <Text style={styles.retryText}>
+                                    Try again in {retryDelay} seconds
+                                </Text>
+                            )}
+
+                            {/* Continue Button */}
+                            <Pressable
+                                onPress={onSubmit}
+                                style={[styles.signUpButton, (loading || retryDelay > 0) && styles.buttonDisabled]}
+                                disabled={loading || retryDelay > 0}
+                            >
+                                {loading ? (
+                                    <ActivityIndicator color="white" />
+                                ) : (
+                                    <Text style={styles.signUpButtonText}>
                                         {retryDelay > 0 ? "Please Wait" : "Sign In"}
                                     </Text>
-                                    <AntDesign name="arrowright" size={20} color="white" />
-                                </>
-                            )}
-                        </Pressable>
+                                )}
+                            </Pressable>
+                        </View>
                     </View>
                 </View>
-            </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+            </ScrollView>
+        </TouchableWithoutFeedback>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#F0FFFA"
+    scrollViewContent: {
+        flexGrow: 1
     },
-    innerContainer: {
-        flex: 1,
-        justifyContent: "space-between",
+    mainContainer: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#F0FFFA',
+        justifyContent: 'flex-start',
+        alignItems: 'center'
+    },
+    backgroundImage: {
+        width: '100%',
+        height: undefined,
+        aspectRatio: 1
+    },
+    contentWrapper: {
         paddingHorizontal: 24,
-        paddingVertical: 24
+        paddingVertical: 20,
+        width: '100%',
+        marginTop: -50 // Adjust this to position the card properly over the image
+    },
+    contentCard: {
+        borderRadius: 30,
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#e5e7eb',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 5,
+        paddingHorizontal: 25,
+        paddingVertical: 25
     },
     backButton: {
         backgroundColor: "white",
@@ -117,56 +149,52 @@ const styles = StyleSheet.create({
         marginBottom: 16
     },
     textContainer: {
-        marginBottom: 32
+        marginBottom: 24
     },
-    title: {
+    heading: {
         fontSize: 28,
-        fontWeight: "700",
-        color: "#04714A"
+        fontWeight: '700',
+        color: '#000'
     },
-    subtitle: {
-        fontSize: 14,
-        color: "rgba(0, 0, 0, 0.5)",
-        fontWeight: "normal",
+    subheading: {
+        fontSize: 16,
+        color: 'rgba(0, 0, 0, 0.5)',
+        fontWeight: 'normal',
         marginVertical: 8
     },
+    inputWrapper: {
+        width: '100%',
+        marginTop: 16,
+        marginBottom: 8
+    },
     input: {
-        backgroundColor: "white",
-        borderWidth: 1,
-        borderColor: "#04714A",
-        borderRadius: 8,
-        padding: 16,
-        fontSize: 16,
-        height: 55
+        width: '100%',
+        height: 50,
+        backgroundColor: '#F1F1F1',
+        borderRadius: 10,
+        paddingHorizontal: 16,
+        fontSize: 16
     },
     retryText: {
         color: "#FF3B30",
         textAlign: "center",
-        marginTop: 16,
+        marginTop: 8,
         fontSize: 14
     },
-    bottomContainer: {
-        marginBottom: 0
-    },
-    continueButton: {
-        width: "100%",
+    signUpButton: {
+        width: '100%',
         height: 55,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#04714A",
-        borderRadius: 8,
-        flexDirection: "row",
-        gap: 8
-    },
-    continueButtonPressed: {
-        opacity: 0.8
+        marginVertical: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#04714A',
+        borderRadius: 8
     },
     buttonDisabled: {
-        backgroundColor: "#999"
+        backgroundColor: '#999'
     },
-    continueButtonText: {
-        color: "white",
-        fontSize: 18,
-        fontWeight: "600"
+    signUpButtonText: {
+        color: 'white',
+        fontSize: 18
     }
 });
