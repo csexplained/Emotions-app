@@ -68,6 +68,7 @@ export default function EmailLoginScreen() {
             setRedirect("/");
           }
         }
+        console.log(response.user?.$id)
         setUser(response.user ?? null);
         setStep(3); // Go to Thank You screen
       } else {

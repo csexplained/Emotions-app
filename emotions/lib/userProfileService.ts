@@ -135,11 +135,9 @@ const UserProfileService = {
      * @returns {Promise<UserProfile>} Existing or newly created profile
      */
     ensureUserProfileExists: async (profileData: UserProfile) => {
-        const { setuserProfile } = useAuthStore()
         try {
             const existingProfile = await UserProfileService.getUserProfile(profileData.userId);
             if (existingProfile) {
-                setuserProfile(existingProfile)
                 return existingProfile;
             }
             return await UserProfileService.createUserProfile(profileData);

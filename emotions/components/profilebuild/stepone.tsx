@@ -18,6 +18,8 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Checkbox from "expo-checkbox";
 import userdata from "@/types/userprofile.types"
+import Authdata from "@/types/authdata.types";
+
 interface OtpScreenProps {
     userdata: userdata;
     setUserData: (userdata: userdata) => void;
@@ -27,9 +29,11 @@ interface OtpScreenProps {
     onSubmit: () => void;
     isSubmitting: boolean;
     error: string | null;
+    authData: Authdata;
+    setauthData: (authData: Authdata) => void;
 }
 
-export default function Stepone({ step, totalsteps, onSubmit, isSubmitting, error, userdata, setUserData, setstep }: OtpScreenProps) {
+export default function Stepone({ step, totalsteps, authData, setauthData, onSubmit, isSubmitting, error, userdata, setUserData, setstep }: OtpScreenProps) {
     const [isChecked, setIsChecked] = useState(false);
 
     return (
@@ -115,8 +119,8 @@ export default function Stepone({ step, totalsteps, onSubmit, isSubmitting, erro
                         <TextInput
                             placeholder="Your Mobile Number"
                             keyboardType="phone-pad"
-                            value={userdata.mobileNumber}
-                            onChangeText={(text) => setUserData({ ...userdata, mobileNumber: text })}
+                            value={authData.phone}
+                            onChangeText={(text) => setauthData({ ...authData, phone: text })}
                             style={styles.textInput}
                         />
                     </View>
@@ -126,6 +130,8 @@ export default function Stepone({ step, totalsteps, onSubmit, isSubmitting, erro
                         <TextInput
                             placeholder="Your Email"
                             keyboardType="email-address"
+                            value={authData.email}
+                            onChangeText={(text) => setauthData({ ...authData, email: text })}
                             editable={false}
                             style={styles.textInput}
                         />

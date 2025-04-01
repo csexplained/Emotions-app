@@ -8,6 +8,8 @@ import AboutYou from "@/types/aboutyoutypes";
 import { useAuthStore } from "@/store/authStore";
 import UserProfileService from "@/lib/userProfileService";
 import QuestionsService from "@/lib/questions.Service"; // Import the QuestionsService we created
+import Authdata from "@/types/authdata.types";
+import userdata from "@/types/userprofile.types";
 
 export default function Indexscreen() {
     const user = useAuthStore(state => state.user);
@@ -16,16 +18,21 @@ export default function Indexscreen() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const [userdata, setUserData] = useState<Userprofile>({
-        userId: user?.$id || "",
-        firstname: "",
-        lastname: "",
-        gender: "",
-        mobileNumber: "",
-        city: "",
-        country: "",
+    const userprofile = useAuthStore(state => state.userProfile);
+    const setuserprofile = useAuthStore(state => state.setuserProfile);
+    const [authData, setauthData] = useState<Authdata>({
+        phone: user?.phone || "",
+        email: user?.email || "",
     });
 
+    const [userdata, setUserData] = useState<userdata>({
+        userId: user?.$id || "",
+        firstname: userprofile?.firstname || "",
+        lastname: userprofile?.lastname || "",
+        gender: userprofile?.gender || "",
+        city: userprofile?.city || "",
+        country: userprofile?.country || "",
+    });
     const [aboutyou, setAboutYou] = useState<AboutYou>({
         "Have you ever worked on your mental health?2": "",
         "How do you usually cope with stress?": "",
@@ -56,6 +63,7 @@ export default function Indexscreen() {
         try {
             // Create or update user profile
             await UserProfileService.ensureUserProfileExists(userdata);
+            setuserprofile(userdata)
             setStep(prev => prev + 1);
         } catch (error) {
             console.error("Profile creation failed:", error);
@@ -97,6 +105,8 @@ export default function Indexscreen() {
                     totalsteps={total}
                     userdata={userdata}
                     setUserData={setUserData}
+                    setauthData={setauthData}
+                    authData={authData}
                     setstep={setStep}
                     onSubmit={handleSubmit}
                     isSubmitting={isSubmitting}
