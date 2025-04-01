@@ -136,7 +136,6 @@ export const loginOrSignUpWithEmail = async (
     name: string = 'User'
 ) => {
     const { setUser } = useAuthStore.getState();
-
     // Validate email format before making any requests
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -145,7 +144,6 @@ export const loginOrSignUpWithEmail = async (
             error: "Please enter a valid email address",
         };
     }
-
     // Validate password requirements
     if (password.length < 6) {
         return {
@@ -153,10 +151,9 @@ export const loginOrSignUpWithEmail = async (
             error: "Password must be at least 6 characters",
         };
     }
-
     try {
         // First try to login
-        await account.createEmailPasswordSession(email, password);
+        await account.createEmailPasswordSession(email, password)
     } catch (loginError: any) {
         // Handle rate limiting
         if (loginError?.code === 429 || loginError?.message?.includes('Rate limit')) {
@@ -166,52 +163,44 @@ export const loginOrSignUpWithEmail = async (
                 isRateLimited: true,
             };
         }
-
-        // Only attempt signup if the error is specifically about user not found
-        if (loginError?.message?.includes('User not found') ||
-            loginError?.type === 'user_not_found') {
-
-            try {
-                const randomString = Math.random().toString(36).substring(2, 15);
-                const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
-                const prefix = sanitizedPrefix ? (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) : 'user';
-                const userId = `${prefix}_${randomString}`.substring(0, 36);
-
-                await account.create(userId, email, password, name);
-                await new Promise(resolve => setTimeout(resolve, 500));
-                await account.createSession(email, password);
-            } catch (signupError: any) {
-                console.error("Signup failed:", signupError);
-
-                if (signupError?.code === 429) {
-                    return {
-                        success: false,
-                        error: "Too many signup attempts. Please wait.",
-                        isRateLimited: true,
-                    };
-                }
-
-                if (signupError?.message?.includes('already exists')) {
-                    return {
-                        success: false,
-                        error: "An account with this email already exists",
-                    };
-                }
-
+        
+        // First, try to create a new account if login failed
+        try {
+            const randomString = Math.random().toString(36).substring(2, 15);
+            const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
+            const prefix = sanitizedPrefix ? (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) : 'user';
+            const userId = `${prefix}_${randomString}`.substring(0, 36);
+            
+            await account.create(ID.custom(userId), email, password, name);
+            // Add small delay between signup and login to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await account.createSession(email, password);
+        } catch (signupError: any) {
+            // If signup failed because email exists, it means the original login
+            // failed due to wrong password
+            if (signupError?.message?.includes("already exists")) {
                 return {
                     success: false,
-                    error: signupError.message || "Account creation failed",
+                    error: "Wrong password. Please try again.",
                 };
             }
-        } else {
-            // For all other errors (including invalid credentials)
+            
+            if (signupError?.code === 429) {
+                return {
+                    success: false,
+                    error: "Too many signup attempts. Please wait.",
+                    isRateLimited: true,
+                };
+            }
+            
+            console.error("Signup failed:", signupError);
             return {
                 success: false,
-                error: "Wrong password. Please try again.",
+                error: signupError.message || "Account creation failed",
             };
         }
     }
-
+    
     try {
         // Success case - get user data
         const user = await account.get();
@@ -221,7 +210,6 @@ export const loginOrSignUpWithEmail = async (
             emailVerification: user.emailVerification || false,
             phoneVerification: user.phoneVerification || false,
         };
-
         setUser(formattedUser);
         return {
             success: true,

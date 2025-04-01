@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   scrollContent: {
-    paddingBottom: 80, // Space for the button
+    paddingBottom: 80,
   },
   imageContainer: {
     width: '100%',
