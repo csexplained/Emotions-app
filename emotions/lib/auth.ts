@@ -156,7 +156,7 @@ export const loginOrSignUpWithEmail = async (
 
     try {
         // First try to login
-        await account.createEmailPasswordSession(email, password)
+        await account.createEmailPasswordSession(email, password);
     } catch (loginError: any) {
         // Handle rate limiting
         if (loginError?.code === 429 || loginError?.message?.includes('Rate limit')) {
@@ -167,22 +167,18 @@ export const loginOrSignUpWithEmail = async (
             };
         }
 
-        // Only attempt signup if the error is specifically about invalid credentials
-        if (loginError?.message?.includes('Invalid credentials') ||
-            loginError?.type === 'user_invalid_credentials') {
+        // Only attempt signup if the error is specifically about user not found
+        if (loginError?.message?.includes('User not found') ||
+            loginError?.type === 'user_not_found') {
 
             try {
                 const randomString = Math.random().toString(36).substring(2, 15);
                 const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
-                // Ensure it starts with a letter if the sanitized string is empty or starts with a special char
                 const prefix = sanitizedPrefix ? (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) : 'user';
-                // Combine and ensure total length is within 36 chars
                 const userId = `${prefix}_${randomString}`.substring(0, 36);
-                //console.log(userId)
-                await account.create(userId, email, password, name);
-                // Add small delay between signup and login to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 500));
 
+                await account.create(userId, email, password, name);
+                await new Promise(resolve => setTimeout(resolve, 500));
                 await account.createSession(email, password);
             } catch (signupError: any) {
                 console.error("Signup failed:", signupError);
@@ -195,17 +191,23 @@ export const loginOrSignUpWithEmail = async (
                     };
                 }
 
+                if (signupError?.message?.includes('already exists')) {
+                    return {
+                        success: false,
+                        error: "An account with this email already exists",
+                    };
+                }
+
                 return {
                     success: false,
                     error: signupError.message || "Account creation failed",
                 };
             }
         } else {
-            // For all other errors
-            console.log("Login error:", loginError);
+            // For all other errors (including invalid credentials)
             return {
                 success: false,
-                error: loginError.message || "Authentication failed",
+                error: "Wrong password. Please try again.",
             };
         }
     }

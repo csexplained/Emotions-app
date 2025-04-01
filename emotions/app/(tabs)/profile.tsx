@@ -81,7 +81,7 @@ export default function Indexscreen() {
       });
 
       // Optional: Show success message or navigate
-      console.log("Profile updated successfully");
+      //"Profile updated successfully");
     } catch (err) {
       console.error('Failed to update profile:', err);
       setError("Failed to update profile. Please try again.");

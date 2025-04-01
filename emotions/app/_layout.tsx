@@ -71,10 +71,10 @@ export default function RootLayout() {
     if (!shouldRedirect) return;
 
     if (shouldRedirect.redirectToAuth) {
-      console.log('🔐 Redirecting to /auth');
+      //console.log('🔐 Redirecting to /auth');
       router.replace('/auth');
     } else if (shouldRedirect.redirectToHome) {
-      console.log('🏠 Redirecting to /(tabs)');
+      //console.log('🏠 Redirecting to /(tabs)');
       router.replace('/(tabs)');
     }
   }, [shouldRedirect]);
