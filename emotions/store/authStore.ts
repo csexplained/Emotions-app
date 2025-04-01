@@ -1,126 +1,181 @@
+// @/store/authStore.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { account, client } from '@/lib/appwrite';
-import { OAuthProvider } from 'react-native-appwrite';
-import { AuthState } from '@/types/auth';
+import { account } from '@/lib/appwrite';
+import * as SecureStore from 'expo-secure-store';
+import { AppState } from 'react-native';
+import { AuthState, User } from '@/types/auth.types';
+import UserProfileService from '@/lib/userProfileService';
+import Userprofile from '@/types/userprofile.types';
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
-const useAuthStore = create<AuthState>()(
+export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => ({
-            isAuthenticated: false,
             user: null,
-            step: 1,
-            phoneNumber: '',
-            otp: '',
-            loading: false,
-            error: null,
+            userProfile: null,
+            isAuthenticated: false,
+            isLoading: false,
+            sessionChecked: false,
+            lastActivity: null,
 
-            // Initialize auth state on app start
             initializeAuth: async () => {
-                set({ loading: true });
+                set({ isLoading: true });
                 try {
-                    const user = await account.get();
-                    set({
-                        isAuthenticated: true,
-                        user,
-                        loading: false
-                    });
+                    const storedUser = await SecureStore.getItemAsync('user');
+                    if (storedUser) {
+                        const user = JSON.parse(storedUser);
+                        set({ user, isAuthenticated: true });
+                    }
+                    await get().checkSession();
                 } catch (error) {
+                    console.warn('Auth error:', error);
+                    await get().clearAuth();
+                } finally {
+                    set({ isLoading: false, sessionChecked: true });
+                }
+            },
+
+            checkSession: async () => {
+                set({ isLoading: true });
+
+                try {
+                    const session = await account.getSession('current');
+
+                    // ✅ No session found — don't proceed
+                    if (!session || new Date(session.expire).getTime() < Date.now()) {
+                        await get().clearAuth();
+                        return false;
+                    }
+
+                    // ✅ Session is valid
+                    const user = await account.get();
+
+                    const formattedUser = {
+                        ...user,
+                        createdAt: user.$createdAt ?? new Date().toISOString(),
+                    };
+
+                    await SecureStore.setItemAsync('user', JSON.stringify(formattedUser));
+                    const userProfile = await UserProfileService.getUserProfile(user.$id);
                     set({
-                        isAuthenticated: false,
+                        user: formattedUser,
+                        isAuthenticated: true,
+                        lastActivity: Date.now(),
+                        userProfile: userProfile
+                    });
+
+                    return true;
+                } catch (error) {
+                    console.warn('Session check failed:', error);
+                    await get().clearAuth();
+                    return false;
+                } finally {
+                    set({ isLoading: false });
+                }
+            },
+
+            setUser: async (user: User | null) => {
+                if (user) {
+                    const formattedUser = {
+                        ...user,
+                        createdAt: user.createdAt || new Date().toISOString()
+                    };
+                    await SecureStore.setItemAsync('user', JSON.stringify(formattedUser));
+                    set({
+                        user: formattedUser,
+                        isAuthenticated: true,
+                        lastActivity: Date.now()
+                    });
+                } else {
+                    await get().clearAuth();
+                }
+            },
+            setuserProfile: async (userProfile: Userprofile | null) => {
+                if (userProfile) {
+                    set({
+                        userProfile,
+                        lastActivity: Date.now()
+                    });
+                } else {
+                    await get().clearAuth();
+                }
+            },
+
+            clearAuth: async () => {
+                try {
+                    await account.deleteSession('current');
+                } finally {
+                    await SecureStore.deleteItemAsync('user');
+                    set({
                         user: null,
-                        loading: false
+                        isAuthenticated: false,
+                        lastActivity: null
                     });
                 }
             },
 
-            // Step management
-            setStep: (step) => set({ step }),
-            setPhoneNumber: (phoneNumber) => set({ phoneNumber }),
-            setOtp: (otp) => set({ otp }),
-
-            // Phone OTP flow
-            sendOtp: async () => {
-                set({ loading: true, error: null });
+            refreshSession: async () => {
                 try {
-                    const { phoneNumber } = get();
-                    // Implement your OTP sending logic here
-                    // For Appwrite, you might need to use a function or extension
-                    await account.createSession('unique', phoneNumber);
-                    set({ loading: false, step: 3 }); // Move to OTP screen
-                } catch (error: any) {
-                    set({ error: error.message, loading: false });
-                    throw error;
-                }
-            },
-
-            verifyOtp: async (otp) => {
-                set({ loading: true, error: null });
-                try {
-                    // Verify OTP with Appwrite
-                    await account.updatePhoneSession('unique', otp);
+                    // Any Appwrite call will automatically refresh the session
                     const user = await account.get();
+                    await SecureStore.setItemAsync('user', JSON.stringify(user));
                     set({
-                        isAuthenticated: true,
-                        user,
-                        loading: false,
-                        otp: '', // Clear OTP after verification
-                        step: 4 // Move to thank you screen
+                        user: { ...user, createdAt: user.$createdAt },
+                        lastActivity: Date.now()
                     });
                     return true;
-                } catch (error: any) {
-                    set({ error: error.message, loading: false });
+                } catch (error) {
+                    await get().clearAuth();
                     return false;
                 }
             },
-
-            // Social login
-            socialLogin: async (provider) => {
-                set({ loading: true, error: null });
-                try {
-                    await account.createOAuth2Session(
-                        provider as OAuthProvider,
-                        'your-app://auth-callback', // Your success deep link
-                        'your-app://auth-callback-error' // Your error deep link
-                    );
-                    // The actual authentication happens in the deep link handler
-                } catch (error: any) {
-                    set({ error: error.message, loading: false });
-                    throw error;
-                }
-            },
-
-            // Logout
-            logout: async () => {
-                set({ loading: true });
-                try {
-                    await account.deleteSession('current');
-                    set({
-                        isAuthenticated: false,
-                        user: null,
-                        phoneNumber: '',
-                        otp: '',
-                        step: 1,
-                        loading: false
-                    });
-                } catch (error: any) {
-                    set({ error: error.message, loading: false });
-                    throw error;
-                }
-            }
         }),
         {
             name: 'auth-storage',
-            storage: createJSONStorage(() => AsyncStorage),
+            storage: createJSONStorage(() => ({
+                getItem: async (name: string) => {
+                    return await SecureStore.getItemAsync(name);
+                },
+                setItem: async (name: string, value: string) => {
+                    await SecureStore.setItemAsync(name, value);
+                },
+                removeItem: async (name: string) => {
+                    await SecureStore.deleteItemAsync(name);
+                },
+            })),
             partialize: (state) => ({
-                // Only persist these values
-                isAuthenticated: state.isAuthenticated,
                 user: state.user,
-                phoneNumber: state.phoneNumber
-            })
+                lastActivity: state.lastActivity
+            }),
         }
     )
 );
 
-export default useAuthStore;
+// Session timeout and activity tracking
+let activityTimer: NodeJS.Timeout;
+
+const setupSessionTimeout = () => {
+    const { isAuthenticated, lastActivity, clearAuth } = useAuthStore.getState();
+
+    if (!isAuthenticated || !lastActivity) return;
+
+    const timeSinceLastActivity = Date.now() - lastActivity;
+    const timeRemaining = SESSION_TIMEOUT - timeSinceLastActivity;
+
+    if (timeRemaining <= 0) {
+        clearAuth();
+    } else {
+        clearTimeout(activityTimer);
+        activityTimer = setTimeout(() => {
+            clearAuth();
+        }, timeRemaining);
+    }
+};
+
+// Track app state changes
+AppState.addEventListener('change', (state) => {
+    if (state === 'active') {
+        setupSessionTimeout();
+    }
+});

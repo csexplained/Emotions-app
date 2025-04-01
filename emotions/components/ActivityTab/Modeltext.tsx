@@ -29,14 +29,14 @@ const ExerciseScreen = ({
           <View style={styles.imageOverlay}>
             <Text style={styles.exerciseName}>{exerciseName}</Text>
             <Text style={styles.exerciseTime}>{time}</Text>
-            
+
             {/* Tags */}
             <View style={styles.tagsContainer}>
               {tags.map((tag, index) => (
-                <View 
-                  key={index} 
+                <View
+                  key={index}
                   style={[
-                    styles.tag, 
+                    styles.tag,
                     { backgroundColor: getColorForTag(index) }
                   ]}
                 >
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   scrollContent: {
-    paddingBottom: 80, // Space for the button
+    paddingBottom: 80,
   },
   imageContainer: {
     width: '100%',

@@ -9,20 +9,25 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     ScrollView,
-    StyleSheet
+    StyleSheet,
+    TouchableOpacity,
+    ActivityIndicator
 } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AboutYou from "@/types/aboutyoutypes";
 
 interface SteptwoProps {
-    aboutyou: AboutYou;
-    setAboutYou: (aboutyou: AboutYou) => void;
-    setstep: (step: number) => void;
-    totalsteps: number;
     step: number;
+    totalsteps: number;
+    aboutyou: Record<string, string>;
+    setAboutYou: (data: Record<string, string>) => void;
+    setstep: (step: number) => void;
+    onSubmit: () => void;
+    isSubmitting: boolean;
+    error: string | null;
 }
 
-export default function Steptwo({ step, totalsteps, aboutyou, setAboutYou, setstep }: SteptwoProps) {
+export default function Steptwo({ step, totalsteps, error, isSubmitting, onSubmit, aboutyou, setAboutYou, setstep }: SteptwoProps) {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -37,7 +42,7 @@ export default function Steptwo({ step, totalsteps, aboutyou, setAboutYou, setst
                     {/* Header Section */}
                     <View style={styles.headerContainer}>
                         <Pressable
-                            onPress={() => setstep(2)}
+                            onPress={() => setstep(1)}
                             style={styles.backButton}
                         >
                             <AntDesign name="arrowleft" size={24} color="black" />
@@ -70,14 +75,19 @@ export default function Steptwo({ step, totalsteps, aboutyou, setAboutYou, setst
                         ))}
                     </View>
 
-                    {/* Continue Button */}
-                    <View style={styles.buttonContainer}>
-                        <Pressable
-                            onPress={() => setstep(step + 1)}
-                            style={styles.continueButton}
+                    <View style={styles.submitContainer}>
+                        {error && <Text style={styles.errorText}>{error}</Text>}
+                        <TouchableOpacity
+                            style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
+                            onPress={onSubmit}
+                            disabled={isSubmitting}
                         >
-                            <Text style={styles.continueButtonText}>Continue</Text>
-                        </Pressable>
+                            {isSubmitting ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>Submit Profile</Text>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </TouchableWithoutFeedback>
@@ -168,5 +178,30 @@ const styles = StyleSheet.create({
     continueButtonText: {
         color: 'white',
         fontSize: 18
-    }
+    },
+    submitContainer: {
+        marginTop: 30,
+        marginBottom: 40,
+    },
+    submitButton: {
+        width: '100%',
+        height: 55,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#04714A',
+        borderRadius: 8
+    },
+    submitButtonDisabled: {
+        backgroundColor: '#014a30',
+    },
+    submitButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    errorText: {
+        color: 'red',
+        marginBottom: 15,
+        textAlign: 'center',
+    },
 });

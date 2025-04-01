@@ -13,24 +13,38 @@ import {
     Modal,
     TouchableOpacity,
     Alert,
-    StyleSheet
+    StyleSheet,
+    ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import * as ImagePicker from 'expo-image-picker';
-import userdata from "@/types/user.types";
+import * as ImagePicker from "expo-image-picker";
+import { BlurView } from "expo-blur";
+import userdata from "@/types/userprofile.types";
 import LogoutIcon from "@/assets/icons/Logout";
+import { useAuthStore } from "@/store/authStore";
+import Authdata from "@/types/authdata.types";
 
 interface OtpScreenProps {
+    authData: Authdata
     userdata: userdata;
+    setauthData: (authData: Authdata) => void;
     setUserData: (userdata: userdata) => void;
+    onSubmit: () => Promise<void>;
+    loading: boolean;
+    error: string;
 }
 
-export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
+export default function Stepone({ userdata, authData, onSubmit, loading, error, setauthData, setUserData }: OtpScreenProps) {
     const [isChecked, setIsChecked] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
-    const [profileImage, setProfileImage] = useState(require("@/assets/images/chatlogo.png"));
+    const [profileImage, setProfileImage] = useState(
+        require("@/assets/images/chatlogo.png")
+    );
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const clearAuth = useAuthStore((state) => state.clearAuth);
 
     const pickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -42,6 +56,19 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
 
         if (!result.canceled) {
             setProfileImage({ uri: result.assets[0].uri });
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            setIsLoggingOut(true);
+            await clearAuth();
+            router.replace("/auth");
+        } catch (error) {
+            console.error("Logout failed:", error);
+            Alert.alert("Logout Error", "Failed to logout. Please try again.");
+        } finally {
+            setIsLoggingOut(false);
         }
     };
 
@@ -86,6 +113,16 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
         );
     };
 
+    const handleSubmit = async () => {
+        try {
+            await onSubmit();
+            Alert.alert("Success", "Profile updated successfully");
+        } catch (err) {
+            console.error('Submit error:', err);
+            // Error is already handled in the parent component
+        }
+    };
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -118,8 +155,9 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                                 style={styles.profileImage}
                                 source={profileImage}
                             />
+                            {/*onPress={showImagePickerOptions}*/}
                             <Pressable
-                                onPress={showImagePickerOptions}
+                                onPress={() => Alert.alert("Coming Soon", "This Feature will be added Soon")}
                                 style={styles.cameraButton}
                             >
                                 <FontAwesome name="camera" size={16} color="white" />
@@ -133,7 +171,9 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                             <TextInput
                                 placeholder="Your First Name"
                                 value={userdata.firstname}
-                                onChangeText={(text) => setUserData({ ...userdata, firstname: text })}
+                                onChangeText={(text) =>
+                                    setUserData({ ...userdata, firstname: text })
+                                }
                                 style={styles.textInput}
                             />
                         </View>
@@ -143,7 +183,9 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                             <TextInput
                                 placeholder="Your Last Name"
                                 value={userdata.lastname}
-                                onChangeText={(text) => setUserData({ ...userdata, lastname: text })}
+                                onChangeText={(text) =>
+                                    setUserData({ ...userdata, lastname: text })
+                                }
                                 style={styles.textInput}
                             />
                         </View>
@@ -157,17 +199,38 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                                     key={gender}
                                     style={[
                                         styles.genderOption,
-                                        userdata.gender === gender && styles.genderOptionSelected
+                                        userdata.gender === gender && styles.genderOptionSelected,
                                     ]}
                                     onPress={() => setUserData({ ...userdata, gender })}
                                 >
-                                    {gender === "male" && <FontAwesome name="mars" size={20} color={userdata.gender === gender ? "white" : "black"} />}
-                                    {gender === "female" && <FontAwesome name="venus" size={20} color={userdata.gender === gender ? "white" : "black"} />}
-                                    {gender === "other" && <FontAwesome name="genderless" size={20} color={userdata.gender === gender ? "white" : "black"} />}
-                                    <Text style={[
-                                        styles.genderOptionText,
-                                        userdata.gender === gender && styles.genderOptionTextSelected
-                                    ]}>
+                                    {gender === "male" && (
+                                        <FontAwesome
+                                            name="mars"
+                                            size={20}
+                                            color={userdata.gender === gender ? "white" : "black"}
+                                        />
+                                    )}
+                                    {gender === "female" && (
+                                        <FontAwesome
+                                            name="venus"
+                                            size={20}
+                                            color={userdata.gender === gender ? "white" : "black"}
+                                        />
+                                    )}
+                                    {gender === "other" && (
+                                        <FontAwesome
+                                            name="genderless"
+                                            size={20}
+                                            color={userdata.gender === gender ? "white" : "black"}
+                                        />
+                                    )}
+                                    <Text
+                                        style={[
+                                            styles.genderOptionText,
+                                            userdata.gender === gender &&
+                                            styles.genderOptionTextSelected,
+                                        ]}
+                                    >
                                         {gender.charAt(0).toUpperCase() + gender.slice(1)}
                                     </Text>
                                 </Pressable>
@@ -180,8 +243,11 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                         <TextInput
                             placeholder="Your Mobile Number"
                             keyboardType="phone-pad"
-                            value={userdata.mobileNumber}
-                            onChangeText={(text) => setUserData({ ...userdata, mobileNumber: text })}
+                            value={authData.phone}
+                            editable={false}
+                            onChangeText={(text) =>
+                                setauthData({ ...authData, phone: text })
+                            }
                             style={styles.textInput}
                         />
                     </View>
@@ -191,8 +257,11 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                         <TextInput
                             placeholder="Your Email"
                             keyboardType="email-address"
-                            value={userdata.email}
-                            onChangeText={(text) => setUserData({ ...userdata, email: text })}
+                            editable={false}
+                            value={authData.email}
+                            onChangeText={(text) =>
+                                setauthData({ ...authData, email: text })
+                            }
                             style={styles.textInput}
                         />
                     </View>
@@ -203,7 +272,9 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                             <TextInput
                                 placeholder="Your City"
                                 value={userdata.city}
-                                onChangeText={(text) => setUserData({ ...userdata, city: text })}
+                                onChangeText={(text) =>
+                                    setUserData({ ...userdata, city: text })
+                                }
                                 style={styles.textInput}
                             />
                         </View>
@@ -212,44 +283,76 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                             <TextInput
                                 placeholder="Your Country"
                                 value={userdata.country}
-                                onChangeText={(text) => setUserData({ ...userdata, country: text })}
+                                onChangeText={(text) =>
+                                    setUserData({ ...userdata, country: text })
+                                }
                                 style={styles.textInput}
                             />
                         </View>
                     </View>
 
+                    {/* Error message */}
+                    {error ? (
+                        <Text style={styles.errorText}>{error}</Text>
+                    ) : null}
+
+                    {/* Submit button */}
+                    <TouchableOpacity
+                        style={styles.submitButton}
+                        onPress={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>Save Changes</Text>
+                        )}
+                    </TouchableOpacity>
+
                     <Modal
-                        animationType="slide"
+                        animationType="fade"
                         transparent={true}
                         visible={showLogoutModal}
                         onRequestClose={() => setShowLogoutModal(false)}
                     >
-                        <View style={styles.modalOverlay}>
-                            <View style={styles.modalContainer}>
-                                <View style={styles.modalButtonContainer}>
-                                    <TouchableOpacity
-                                        style={styles.cancelButton}
-                                        onPress={() => setShowLogoutModal(false)}
-                                    >
-                                        <Text style={styles.cancelButtonText}>
-                                            Cancel
-                                        </Text>
-                                    </TouchableOpacity>
+                        <BlurView
+                            intensity={30}
+                            tint="dark"
+                            style={StyleSheet.absoluteFill}
+                        >
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.modalContainer}>
+                                    <Text style={styles.modalTitle}>Logout Confirmation</Text>
+                                    <Text style={styles.modalMessage}>
+                                        Are you sure you want to logout?
+                                    </Text>
 
-                                    <TouchableOpacity
-                                        style={styles.logoutConfirmButton}
-                                        onPress={() => {
-                                            setShowLogoutModal(false);
-                                            // Handle logout logic
-                                        }}
-                                    >
-                                        <Text style={styles.logoutConfirmButtonText}>
-                                            Yes, Logout
-                                        </Text>
-                                    </TouchableOpacity>
+                                    <View style={styles.modalButtonContainer}>
+                                        <TouchableOpacity
+                                            style={[styles.modalButton, styles.cancelButton]}
+                                            onPress={() => setShowLogoutModal(false)}
+                                            disabled={isLoggingOut}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={[styles.modalButton, styles.logoutConfirmButton]}
+                                            onPress={handleLogout}
+                                            disabled={isLoggingOut}
+                                        >
+                                            {isLoggingOut ? (
+                                                <ActivityIndicator color="white" />
+                                            ) : (
+                                                <Text style={styles.logoutConfirmButtonText}>
+                                                    Yes, Logout
+                                                </Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
+                        </BlurView>
                     </Modal>
                 </ScrollView>
             </TouchableWithoutFeedback>
@@ -260,7 +363,8 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#F0FFFA"
+        backgroundColor: "#F0FFFA",
+        marginBottom: 70,
     },
     scrollViewContent: {
         flexGrow: 1,
@@ -374,17 +478,6 @@ const styles = StyleSheet.create({
     locationInputWrapper: {
         width: '48%'
     },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.5)'
-    },
-    modalContainer: {
-        backgroundColor: '#F0FFFA',
-        padding: 20,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20
-    },
     modalButtonContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between'
@@ -414,5 +507,67 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: 'white',
         fontWeight: 'bold'
-    }
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalContainer: {
+        backgroundColor: "white",
+        borderRadius: 20,
+        padding: 25,
+        width: "80%",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        marginBottom: 10,
+        textAlign: "center",
+    },
+    modalMessage: {
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: "center",
+        color: "#555",
+    },
+
+    modalButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: 120,
+    },
+    // New styles for submit button and error message
+    submitButton: {
+        backgroundColor: '#04714A',
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 0,
+        marginTop: 20,
+    },
+    submitButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    errorText: {
+        color: '#FF3B30',
+        textAlign: 'center',
+        marginTop: 10,
+        paddingHorizontal: 20,
+    },
 });

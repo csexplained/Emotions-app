@@ -26,7 +26,7 @@ export default function HomeScreen() {
         tabBarButton: HapticTab,
       },
     });
-  }, [startChat, navigation]);
+  }, [startChat]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F0FFFA" }}>

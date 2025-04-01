@@ -1,27 +1,28 @@
 import {
     View,
-    TextInput,
     Image,
     Text,
     Pressable,
     ScrollView,
-    KeyboardAvoidingView,
-    Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
     StyleSheet
 } from "react-native";
-import { Link, router } from "expo-router";
-import useAuthStore from "../../store/authStore";
+import { Link, useRouter } from "expo-router";
+import { useAuthStore } from "../../store/authStore";
+import { useEffect } from "react";
 
 export default function AuthIndexScreen() {
-    const { isAuthenticated } = useAuthStore();
+    const router = useRouter();
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-    // Redirect if already authenticated
-    if (isAuthenticated) {
-        router.replace('/');
-        return null;
-    }
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.replace('/(tabs)');
+        }
+    }, []);
+
+    if (isAuthenticated) return null;
+
 
     return (
         <ScrollView
@@ -38,9 +39,9 @@ export default function AuthIndexScreen() {
                         />
                     </View>
                     <View style={styles.progressIndicatorContainer}>
-                        <View style={[styles.progressIndicator, styles.activeProgress]}></View>
-                        <View style={[styles.progressIndicator, styles.inactiveProgress]}></View>
-                        <View style={[styles.progressIndicator, styles.inactiveProgress]}></View>
+                        <View style={[styles.progressIndicator, styles.activeProgress]} />
+                        <View style={[styles.progressIndicator, styles.inactiveProgress]} />
+                        <View style={[styles.progressIndicator, styles.inactiveProgress]} />
                     </View>
                 </View>
 
@@ -48,22 +49,17 @@ export default function AuthIndexScreen() {
                     <Text style={styles.title}>Discover Experiences with a simple swipe</Text>
                     <Text style={styles.subtitle}>Curated activities at your fingertips</Text>
 
-                    <Link href="/auth/login" asChild replace>
-                        <Pressable
-                            style={styles.signUpButton}
-                        >
-                            <Text style={styles.signUpButtonText}>Sign Up</Text>
+                    <Link href="/auth/login" asChild>
+                        <Pressable style={styles.signUpButton}>
+                            <Text style={styles.signUpButtonText}>Sign Via OTP</Text>
                         </Pressable>
                     </Link>
 
-                    <View style={styles.loginContainer}>
-                        <Text style={styles.loginText}>Already have an account?</Text>
-                        <Link href="/auth/login" asChild>
-                            <Pressable>
-                                <Text style={styles.loginLink}>Log In</Text>
-                            </Pressable>
-                        </Link>
-                    </View>
+                    <Link href="/auth/signup" asChild>
+                        <Pressable style={styles.signUpButton2}>
+                            <Text style={styles.signUpButtonText}>Sign Via Email</Text>
+                        </Pressable>
+                    </Link>
                 </View>
             </View>
         </ScrollView>
@@ -84,7 +80,7 @@ const styles = StyleSheet.create({
     topSection: {
         backgroundColor: '#F0FFFA',
         width: '100%',
-        height: '70%'
+        height: '65%'
     },
     imageContainer: {
         flex: 1,
@@ -135,7 +131,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 14,
-        color : "#1E1E1E8E",
+        color: "#1E1E1E8E",
         fontWeight: 'normal',
         textAlign: 'center',
         marginVertical: 14
@@ -143,7 +139,16 @@ const styles = StyleSheet.create({
     signUpButton: {
         width: '100%',
         height: 48,
-        marginVertical: 18,
+        marginVertical: 5,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#04714A',
+        borderRadius: 8
+    },
+    signUpButton2: {
+        width: '100%',
+        height: 48,
+        marginVertical: 2,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#04714A',
@@ -155,20 +160,5 @@ const styles = StyleSheet.create({
     signUpButtonText: {
         color: 'white',
         fontSize: 18
-    },
-    loginContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 12
-    },
-    loginText: {
-        fontSize: 14,
-        marginRight: 4
-    },
-    loginLink: {
-        fontSize: 14,
-        color: '#04714A',
-        fontWeight: '600'
     }
 });
