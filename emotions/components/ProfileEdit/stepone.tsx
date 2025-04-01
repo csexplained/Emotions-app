@@ -24,13 +24,19 @@ import { BlurView } from "expo-blur";
 import userdata from "@/types/userprofile.types";
 import LogoutIcon from "@/assets/icons/Logout";
 import { useAuthStore } from "@/store/authStore";
+import Authdata from "@/types/authdata.types";
 
 interface OtpScreenProps {
+    authData: Authdata
     userdata: userdata;
+    setauthData: (authData: Authdata) => void;
     setUserData: (userdata: userdata) => void;
+    onSubmit: () => Promise<void>;
+    loading: boolean;
+    error: string;
 }
 
-export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
+export default function Stepone({ userdata, authData, onSubmit, loading, error, setauthData, setUserData }: OtpScreenProps) {
     const [isChecked, setIsChecked] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [profileImage, setProfileImage] = useState(
@@ -105,6 +111,16 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
             ],
             { cancelable: true }
         );
+    };
+
+    const handleSubmit = async () => {
+        try {
+            await onSubmit();
+            Alert.alert("Success", "Profile updated successfully");
+        } catch (err) {
+            console.error('Submit error:', err);
+            // Error is already handled in the parent component
+        }
     };
 
     return (
@@ -226,9 +242,10 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                         <TextInput
                             placeholder="Your Mobile Number"
                             keyboardType="phone-pad"
-                            value={userdata.mobileNumber}
+                            value={authData.phone}
+                            editable={false}
                             onChangeText={(text) =>
-                                setUserData({ ...userdata, mobileNumber: text })
+                                setauthData({ ...authData, phone: text })
                             }
                             style={styles.textInput}
                         />
@@ -240,6 +257,10 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                             placeholder="Your Email"
                             keyboardType="email-address"
                             editable={false}
+                            value={authData.email}
+                            onChangeText={(text) =>
+                                setauthData({ ...authData, email: text })
+                            }
                             style={styles.textInput}
                         />
                     </View>
@@ -268,6 +289,24 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
                             />
                         </View>
                     </View>
+
+                    {/* Error message */}
+                    {error ? (
+                        <Text style={styles.errorText}>{error}</Text>
+                    ) : null}
+
+                    {/* Submit button */}
+                    <TouchableOpacity
+                        style={styles.submitButton}
+                        onPress={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="white" />
+                        ) : (
+                            <Text style={styles.submitButtonText}>Save Changes</Text>
+                        )}
+                    </TouchableOpacity>
 
                     <Modal
                         animationType="fade"
@@ -323,7 +362,8 @@ export default function Stepone({ userdata, setUserData }: OtpScreenProps) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#F0FFFA"
+        backgroundColor: "#F0FFFA",
+        marginBottom: 70,
     },
     scrollViewContent: {
         flexGrow: 1,
@@ -499,7 +539,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: "#555",
     },
-    
+
     modalButton: {
         paddingVertical: 12,
         paddingHorizontal: 20,
@@ -507,5 +547,26 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         minWidth: 120,
+    },
+    // New styles for submit button and error message
+    submitButton: {
+        backgroundColor: '#04714A',
+        padding: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 0,
+        marginTop: 20,
+    },
+    submitButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    errorText: {
+        color: '#FF3B30',
+        textAlign: 'center',
+        marginTop: 10,
+        paddingHorizontal: 20,
     },
 });

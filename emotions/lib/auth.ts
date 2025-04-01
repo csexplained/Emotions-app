@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { useAuthStore } from '@/store/authStore';
 import { makeRedirectUri } from 'expo-auth-session';
-import { User } from '@/types/auth';
+import { User } from '@/types/auth.types';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -39,7 +39,6 @@ export const useGoogleAuth = () => {
             const user = await account.get();
             const formattedUser: User = {
                 ...user,
-                $createdAt: user.$createdAt,
                 createdAt: user.$createdAt ?? new Date().toISOString(),
                 emailVerification: user.emailVerification || false,
                 phoneVerification: user.phoneVerification || false
@@ -98,7 +97,6 @@ export const verifyOtp = async (userId: string, secret: string) => {
         const user = await account.get();
         const formattedUser: User = {
             ...user,
-            $createdAt: user.$createdAt,
             createdAt: user.$createdAt || new Date().toISOString(),
             emailVerification: user.emailVerification || false,
             phoneVerification: user.phoneVerification || false
@@ -212,7 +210,6 @@ export const loginOrSignUpWithEmail = async (
         const user = await account.get();
         const formattedUser: User = {
             ...user,
-            $createdAt: user.$createdAt,
             createdAt: user.$createdAt ?? new Date().toISOString(),
             emailVerification: user.emailVerification || false,
             phoneVerification: user.phoneVerification || false,

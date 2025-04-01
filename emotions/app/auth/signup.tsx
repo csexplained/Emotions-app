@@ -5,14 +5,17 @@ import PasswordScreen from "@/components/authflow/PasswordScreen";
 import ThankYouScreen from "@/components/CompleteScreen";
 import { useAuthStore } from "@/store/authStore"; // ✅ Correct
 import { loginOrSignUpWithEmail } from "@/lib/auth";
-import { User } from "@/types/auth";
+import { User } from "@/types/auth.types";
+import UserProfileService from "@/lib/userProfileService";
+import Userprofile from "@/types/userprofile.types";
 export default function EmailLoginScreen() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [retryDelay, setRetryDelay] = useState(0);
-  const { setUser } = useAuthStore();
+  const [redirect, setRedirect] = useState("/profile");
+  const { setUser, setuserProfile } = useAuthStore();
 
   // Handle retry countdown
   useEffect(() => {
@@ -56,9 +59,15 @@ export default function EmailLoginScreen() {
 
     setLoading(true);
     try {
-      const response: { success: boolean; error?: any; user?: User; shouldRetry?: boolean } = await loginOrSignUpWithEmail(email, password, "User");
-
+      const response: { success: boolean; error?: any; user?: User; shouldRetry?: boolean; } = await loginOrSignUpWithEmail(email, password, "User");
       if (response.success) {
+        if (response.user && response.user.$id) {
+          const userProfile = await UserProfileService.getUserProfile(response.user.$id);
+          if (userProfile) {
+            setuserProfile(userProfile);
+            setRedirect("/");
+          }
+        }
         setUser(response.user ?? null);
         setStep(3); // Go to Thank You screen
       } else {
@@ -114,7 +123,7 @@ export default function EmailLoginScreen() {
         retryDelay={retryDelay}
       />
     ),
-    3: <ThankYouScreen redirectTo="/profile" />
+    3: <ThankYouScreen redirectTo={redirect} />
   };
 
   return (

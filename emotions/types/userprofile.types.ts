@@ -3,7 +3,6 @@ export default interface Userprofile {
     firstname: string,
     lastname: string,
     gender: string,
-    mobileNumber: string,
     city: string,
     country: string,
 }

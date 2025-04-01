@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/store/authStore';
 import { databases } from './appwrite';
 import UserProfile from "@/types/userprofile.types";
 
@@ -13,7 +14,6 @@ interface UpdateData {
     firstname?: string;
     lastname?: string;
     gender?: string;
-    mobileNumber?: string;
     city?: string;
     country?: string;
 }
@@ -40,7 +40,6 @@ const UserProfileService = {
                     firstname: profileData.firstname,
                     lastname: profileData.lastname,
                     gender: profileData.gender || '',
-                    mobileNumber: profileData.mobileNumber || '',
                     city: profileData.city || '',
                     country: profileData.country || '',
                 }
@@ -69,7 +68,6 @@ const UserProfileService = {
                 firstname: profile.firstname,
                 lastname: profile.lastname,
                 gender: profile.gender,
-                mobileNumber: profile.mobileNumber,
                 city: profile.city,
                 country: profile.country
             };
@@ -97,16 +95,16 @@ const UserProfileService = {
             if (updates.firstname !== undefined) updateData.firstname = updates.firstname;
             if (updates.lastname !== undefined) updateData.lastname = updates.lastname;
             if (updates.gender !== undefined) updateData.gender = updates.gender;
-            if (updates.mobileNumber !== undefined) updateData.mobileNumber = updates.mobileNumber;
             if (updates.city !== undefined) updateData.city = updates.city;
             if (updates.country !== undefined) updateData.country = updates.country;
 
-            return await databases.updateDocument(
+            await databases.updateDocument(
                 databaseId,
                 userProfileCollectionId,
                 userId,
                 updateData
             );
+            return updateData
         } catch (error) {
             console.error('Error updating user profile:', error);
             throw error;
@@ -137,9 +135,11 @@ const UserProfileService = {
      * @returns {Promise<UserProfile>} Existing or newly created profile
      */
     ensureUserProfileExists: async (profileData: UserProfile) => {
+        const { setuserProfile } = useAuthStore()
         try {
             const existingProfile = await UserProfileService.getUserProfile(profileData.userId);
             if (existingProfile) {
+                setuserProfile(existingProfile)
                 return existingProfile;
             }
             return await UserProfileService.createUserProfile(profileData);

@@ -14,7 +14,6 @@ export default function AuthLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
-        <Stack.Screen name="main" />
         {/* Add other auth screens here if needed */}
       </Stack>
     </View>

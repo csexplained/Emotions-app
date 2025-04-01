@@ -10,7 +10,7 @@ import { useAuthStore } from "@/store/authStore";
 
 export default function Indexscreen() {
 
-  const user = useAuthStore(state => state.user);
+  const userprofile = useAuthStore(state => state.userProfile);
 
 
   return (
@@ -27,7 +27,7 @@ export default function Indexscreen() {
             style={styles.logo}
           />
           <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>{user?.name}</Text>
+            <Text style={styles.headerTitle}>{userprofile?.firstname} {userprofile?.lastname}</Text>
             <View style={styles.flexbox}><Text style={styles.statusText}> <Text style={{ color: "#04714A", marginRight: 2 }}>• </Text>Meditation</Text></View>
           </View>
         </View>
