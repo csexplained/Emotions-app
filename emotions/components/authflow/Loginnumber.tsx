@@ -7,14 +7,23 @@ import {
     Platform,
     TouchableWithoutFeedback,
     Keyboard,
-    StyleSheet
+    StyleSheet,
+    LogBox
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 
+// Suppress the specific warning
+LogBox.ignoreLogs([
+    'CountryModal: Support for defaultProps',
+    'CountryList: Support for defaultProps',
+    'CountryItem: Support for defaultProps',
+    'Support for defaultProps will be removed from function components'
+]);
+
 interface LoginStartedScreenProps {
-    phoneInputRef: React.RefObject<PhoneInput>;
+    phoneInputRef: React.RefObject<any>;
     phoneNumber: string;
     setPhoneNumber: (phoneNumber: string) => void;
     setStep: (step: number) => void;
@@ -22,7 +31,14 @@ interface LoginStartedScreenProps {
     loading: boolean;
 }
 
-export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber, onContinue, setStep, loading }: LoginStartedScreenProps) {
+export default function LoginNumberScreen({
+    phoneInputRef,
+    phoneNumber,
+    setPhoneNumber,
+    setStep,
+    onContinue,
+    loading
+}: LoginStartedScreenProps) {
     const router = useRouter();
 
     return (
@@ -32,7 +48,7 @@ export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber
         >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.innerContainer}>
-                    {/* Top Section (Back Button & Text) */}
+                    {/* Top Section */}
                     <View>
                         <Pressable
                             onPress={() => setStep(1)}
@@ -48,14 +64,14 @@ export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber
                             </Text>
                         </View>
 
-                        {/* Phone Number Input */}
+                        {/* Phone Input */}
                         <View style={styles.phoneInputContainer}>
                             <PhoneInput
                                 ref={phoneInputRef}
                                 defaultValue={phoneNumber}
                                 defaultCode="IN"
                                 layout="first"
-                                onChangeFormattedText={(text) => setPhoneNumber(text)}
+                                onChangeFormattedText={setPhoneNumber}
                                 withShadow
                                 autoFocus
                                 containerStyle={styles.phoneInput}
@@ -64,14 +80,17 @@ export default function Loginnumber({ phoneInputRef, phoneNumber, setPhoneNumber
                         </View>
                     </View>
 
-                    {/* Bottom Section (Sign Up Button) */}
+                    {/* Continue Button */}
                     <View style={styles.buttonContainer}>
                         <Pressable
                             disabled={loading}
                             onPress={onContinue}
-                            style={styles.continueButton}
+                            style={[styles.continueButton, loading && styles.disabledButton]}
+                            android_ripple={{ color: 'rgba(255,255,255,0.3)' }}
                         >
-                            <Text style={styles.continueButtonText}>{loading ? 'Sending...' : 'Continue'}</Text>
+                            <Text style={styles.continueButtonText}>
+                                {loading ? 'Sending...' : 'Continue'}
+                            </Text>
                         </Pressable>
                     </View>
                 </View>
@@ -98,14 +117,16 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 10,
         alignItems: "center",
-        justifyContent: "center"
+        justifyContent: "center",
+        marginBottom: 16
     },
     textContainer: {
-        marginTop: 16
+        marginBottom: 24
     },
     title: {
         fontSize: 24,
-        fontWeight: "700"
+        fontWeight: "700",
+        color: "#000"
     },
     subtitle: {
         fontSize: 14,
@@ -136,8 +157,8 @@ const styles = StyleSheet.create({
         backgroundColor: "#04714A",
         borderRadius: 8
     },
-    continueButtonPressed: {
-        opacity: 0.8
+    disabledButton: {
+        opacity: 0.7
     },
     continueButtonText: {
         color: "white",

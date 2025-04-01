@@ -10,31 +10,19 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     StyleSheet,
-    LogBox
+    TextInput
 } from "react-native";
-import PhoneInput from "react-native-phone-number-input";
 import { Link } from "expo-router";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-
-// Suppress the specific warning
-LogBox.ignoreLogs([
-    'CountryModal: Support for defaultProps',
-    'CountryList: Support for defaultProps',
-    'CountryItem: Support for defaultProps',
-    'Support for defaultProps will be removed from function components'
-]);
-
-
-interface LoginStartedScreenProps {
-    phoneInputRef: React.RefObject<PhoneInput>;
-    phoneNumber: string;
-    setPhoneNumber: (phoneNumber: string) => void;
-    setStep: (step: number) => void;
+interface EmailScreenProps {
+    email: string;
+    setEmail: (email: string) => void;
+    onNext: () => void;
 }
 
-export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhoneNumber, setStep }: LoginStartedScreenProps) {
+export default function EmailScreen({ email, setEmail, onNext }: EmailScreenProps) {
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ScrollView
@@ -65,39 +53,30 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
                                 Start your journey towards success with our expert-led programs
                             </Text>
 
-                            {/* Phone Number Input */}
-                            <Pressable
-                                onPress={() => {
-                                    setStep(2);
-                                    Keyboard.dismiss(); // This will ensure keyboard is dismissed if it was open
-                                }}
-                                style={styles.phoneInputWrapper}
-                                onStartShouldSetResponder={() => true} // This prevents keyboard from opening
-                            >
-                                <PhoneInput
-                                    ref={phoneInputRef}
-                                    defaultValue={phoneNumber}
-                                    defaultCode="IN"
-                                    layout="first"
-                                    onChangeFormattedText={(text) => setPhoneNumber(text)}
-                                    withShadow
-                                    containerStyle={styles.phoneInputContainer}
-                                    textContainerStyle={styles.phoneInputTextContainer}
-                                    textInputProps={{
-                                        editable: false // This prevents keyboard from opening when touching the input
-                                    }}
+                            {/* Email Input */}
+                            <View style={styles.inputWrapper}>
+                                <TextInput
+                                    placeholder="example@email.com"
+                                    placeholderTextColor="#999"
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    style={styles.input}
                                 />
-                            </Pressable>
+                            </View>
 
-                            {/* Sign Up Button */}
+                            {/* Continue Button */}
                             <Pressable
-                                onPress={() => setStep(2)}
+                                onPress={onNext}
                                 style={styles.signUpButton}
+                                disabled={!email}
                             >
-                                <Text style={styles.signUpButtonText}>Get Started</Text>
+                                <Text style={styles.signUpButtonText}>Continue</Text>
                             </Pressable>
 
-                            {/* Social Login Buttons */}
+                            {/*
                             <View style={styles.socialButtonsContainer}>
                                 <View style={styles.socialButton}>
                                     <AntDesign name="google" size={16} color="white" />
@@ -109,6 +88,7 @@ export default function LoginStartedScreen({ phoneInputRef, phoneNumber, setPhon
                                     <FontAwesome name="facebook-official" size={16} color="white" />
                                 </View>
                             </View>
+                           */}
                         </View>
                     </View>
                 </View>
@@ -131,7 +111,7 @@ const styles = StyleSheet.create({
     backgroundImage: {
         width: '100%',
         height: undefined,
-        aspectRatio: 1 // Adjust this based on your image's aspect ratio
+        aspectRatio: 1
     },
     contentWrapper: {
         paddingHorizontal: 24,
@@ -167,19 +147,17 @@ const styles = StyleSheet.create({
         fontWeight: 'normal',
         marginVertical: 8
     },
-    phoneInputWrapper: {
+    inputWrapper: {
         width: '100%',
-        alignItems: 'center',
         marginTop: 16
     },
-    phoneInputContainer: {
+    input: {
         width: '100%',
         height: 50,
-        borderRadius: 10
-    },
-    phoneInputTextContainer: {
-        paddingVertical: 0,
-        backgroundColor: '#F1F1F1'
+        backgroundColor: '#F1F1F1',
+        borderRadius: 10,
+        paddingHorizontal: 16,
+        fontSize: 16
     },
     signUpButton: {
         width: '100%',

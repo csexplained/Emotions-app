@@ -1,5 +1,61 @@
-import { ID } from 'appwrite';
+import { ID, OAuthProvider } from 'appwrite';
 import { account } from './appwrite';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { useAuthStore } from '@/store/authStore';
+import { makeRedirectUri } from 'expo-auth-session';
+import { User } from '@/types/auth.types';
+
+WebBrowser.maybeCompleteAuthSession();
+
+export const useGoogleAuth = () => {
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        clientId: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+        scopes: ['openid', 'profile', 'email'],
+        redirectUri: makeRedirectUri({
+            scheme: "com.newral.emotions",
+            path: 'oauth',
+        }),
+    });
+
+    const { setUser } = useAuthStore();
+
+    const signInWithGoogle = async () => {
+        try {
+            const result = await promptAsync();
+            if (result?.type !== 'success') {
+                throw new Error('Google authentication was cancelled');
+            }
+
+            const { id_token } = result.params;
+
+            await account.createOAuth2Session(
+                'google' as OAuthProvider,
+                makeRedirectUri({ scheme: 'com.newral.emotions', path: 'success' }),
+                makeRedirectUri({ scheme: 'com.newral.emotions', path: 'failure' }),
+                [id_token]
+            );
+
+            const user = await account.get();
+            const formattedUser: User = {
+                ...user,
+                createdAt: user.$createdAt ?? new Date().toISOString(),
+                emailVerification: user.emailVerification || false,
+                phoneVerification: user.phoneVerification || false
+            };
+
+            setUser(formattedUser);
+            return { success: true, user: formattedUser };
+        } catch (error: any) {
+            return {
+                success: false,
+                error: error.message || 'Failed to authenticate with Google'
+            };
+        }
+    };
+
+    return { signInWithGoogle, isLoading: !request };
+};
 
 export const sendOtp = async (phone: string) => {
     try {
@@ -7,7 +63,7 @@ export const sendOtp = async (phone: string) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-appwrite-project': '67e69028003ce5b90fe1', // Replace with yours
+                'x-appwrite-project': `${process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID || ''}`,
             },
             body: JSON.stringify({
                 userId: ID.unique(),
@@ -16,26 +72,154 @@ export const sendOtp = async (phone: string) => {
         });
 
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message);
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to send OTP');
+        }
 
         return {
             success: true,
-            userId: data.userId, // Store this
+            userId: data.userId,
         };
     } catch (error: any) {
-        console.log("OTP Send Error", error);
+        console.error("OTP Send Error:", error);
         return {
             success: false,
-            error: error.message || "Unknown error",
+            error: error.message || "Failed to send verification code",
         };
     }
 };
 
 export const verifyOtp = async (userId: string, secret: string) => {
+    const { setUser } = useAuthStore.getState();
+
     try {
-        const session = await account.updatePhoneSession(userId, secret);
-        return { success: true, session };
+        await account.updatePhoneSession(userId, secret);
+        const user = await account.get();
+        const formattedUser: User = {
+            ...user,
+            createdAt: user.$createdAt || new Date().toISOString(),
+            emailVerification: user.emailVerification || false,
+            phoneVerification: user.phoneVerification || false
+        };
+
+        setUser(formattedUser);
+        return {
+            success: true,
+            user: formattedUser
+        };
     } catch (error: any) {
-        return { success: false, error: error.message };
+        console.error("OTP Verification Error:", error);
+        return {
+            success: false,
+            error: error.message || "Invalid verification code",
+        };
+    }
+};
+
+export const logout = async () => {
+    const { clearAuth } = useAuthStore.getState();
+
+    try {
+        await account.deleteSession('current');
+        clearAuth();
+        return { success: true };
+    } catch (error: any) {
+        return {
+            success: false,
+            error: error.message || "Failed to logout",
+        };
+    }
+};
+export const loginOrSignUpWithEmail = async (
+    email: string,
+    password: string,
+    name: string = 'User'
+) => {
+    const { setUser } = useAuthStore.getState();
+    // Validate email format before making any requests
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return {
+            success: false,
+            error: "Please enter a valid email address",
+        };
+    }
+    // Validate password requirements
+    if (password.length < 6) {
+        return {
+            success: false,
+            error: "Password must be at least 6 characters",
+        };
+    }
+    try {
+        // First try to login
+        await account.createEmailPasswordSession(email, password)
+    } catch (loginError: any) {
+        // Handle rate limiting
+        if (loginError?.code === 429 || loginError?.message?.includes('Rate limit')) {
+            return {
+                success: false,
+                error: "Too many attempts. Please wait before trying again.",
+                isRateLimited: true,
+            };
+        }
+        
+        // First, try to create a new account if login failed
+        try {
+            const randomString = Math.random().toString(36).substring(2, 15);
+            const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
+            const prefix = sanitizedPrefix ? (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) : 'user';
+            const userId = `${prefix}_${randomString}`.substring(0, 36);
+            
+            await account.create(ID.custom(userId), email, password, name);
+            // Add small delay between signup and login to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await account.createSession(email, password);
+        } catch (signupError: any) {
+            // If signup failed because email exists, it means the original login
+            // failed due to wrong password
+            if (signupError?.message?.includes("already exists")) {
+                return {
+                    success: false,
+                    error: "Wrong password. Please try again.",
+                };
+            }
+            
+            if (signupError?.code === 429) {
+                return {
+                    success: false,
+                    error: "Too many signup attempts. Please wait.",
+                    isRateLimited: true,
+                };
+            }
+            
+            console.error("Signup failed:", signupError);
+            return {
+                success: false,
+                error: signupError.message || "Account creation failed",
+            };
+        }
+    }
+    
+    try {
+        // Success case - get user data
+        const user = await account.get();
+        const formattedUser: User = {
+            ...user,
+            createdAt: user.$createdAt ?? new Date().toISOString(),
+            emailVerification: user.emailVerification || false,
+            phoneVerification: user.phoneVerification || false,
+        };
+        setUser(formattedUser);
+        return {
+            success: true,
+            user: formattedUser,
+        };
+    } catch (getUserError: any) {
+        console.error("Failed to get user:", getUserError);
+        return {
+            success: false,
+            error: getUserError.message || "Failed to load user profile",
+        };
     }
 };

@@ -17,12 +17,12 @@ interface OtpScreenProps {
     otp: string;
     setOtp: (otp: string) => void;
     resendOtp: () => void;
-    setstep: (step: number) => void;
+    setStep: (step: number) => void;
     onSubmit: () => void;
     loading: boolean
 }
 
-export default function OtpScreen({ otp, setOtp, resendOtp, setstep, loading, onSubmit }: OtpScreenProps) {
+export default function OtpScreen({ otp, setOtp, resendOtp, setStep, loading, onSubmit }: OtpScreenProps) {
     const router = useRouter();
     const inputRefs = Array(6).fill(null).map(() => useRef<TextInput>(null));
 
@@ -48,7 +48,7 @@ export default function OtpScreen({ otp, setOtp, resendOtp, setstep, loading, on
                     {/* Top Section */}
                     <View>
                         <Pressable
-                            onPress={() => setstep(2)}
+                            onPress={() => setStep(2)}
                             style={styles.backButton}
                         >
                             <AntDesign name="arrowleft" size={24} color="black" />
