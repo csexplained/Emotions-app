@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { act, useRef } from 'react';
 import {
     View,
     Text,
@@ -13,7 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-
+import activitiesData from '@/Data/activity';
+import { useLocalSearchParams } from 'expo-router';
 const { width, height } = Dimensions.get('window');
 
 const images = [
@@ -25,33 +26,15 @@ const images = [
     require('@/assets/images/image.png'),
 ];
 
-const commonInfo = {
-    name: 'Nature Retreat',
-    description: 'Experience the beauty of untouched wilderness'
-};
-
-const data = {
-    title: "Next Exercise",
-    currentStep: 2,
-    totalSteps: 6,
-    exerciseName: "Snake Pose",
-    time: "5 min",
-    distance: "15 feet",
-    difficulty: "Medium",
-    description: "Yoga unites body, mind, and soul, enhancing flexibility, reducing stress, and promoting mindfulness for a healthier, balanced life.",
-    steps: [
-        "Step 1 - Yoga unites body soul, enhancing flexibility.",
-        "Step 2 - Yoga unites body soul, enhancing flexibility.",
-        "Step 3 - Yoga unites body soul, enhancing flexibility.",
-        "Step 4 - Yoga unites body, mind, and soul enhancing flexibility."
-    ],
-    onContinue: () => console.log("Continue pressed")
-}
 
 export default function App() {
+
     const scrollX = useRef(new Animated.Value(0)).current;
     const scrollViewRef = useRef<ScrollView>(null);
+    const { id } = useLocalSearchParams();
 
+    const fulldata = activitiesData.filter((activity) => activity.id === id)[0];
+    const data = fulldata.data
     const renderDotIndicators = () => {
         return (
             <View style={styles.dotContainer}>
@@ -109,8 +92,8 @@ export default function App() {
 
                 {/* Fixed Text Overlay */}
                 <View style={styles.textOverlay}>
-                    <Text style={styles.name}>{commonInfo.name}</Text>
-                    <Text style={styles.description}>{commonInfo.description}</Text>
+                    <Text style={styles.name}>{fulldata?.title}</Text>
+                    <Text style={styles.description}>{fulldata?.description}</Text>
                 </View>
             </View>
 
@@ -123,8 +106,8 @@ export default function App() {
                 <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
                     {/* Section Title with Spacing */}
                     <View style={styles.topbox}>
-                        <Text style={styles.sectionTitle}>{data.title}</Text>
-                        <Text style={styles.sectionTitle}>3 of 4</Text>
+                        <Text style={styles.sectionTitle}>Steps</Text>
+                        <Text style={styles.sectionTitle}>{data.currentStep}/{data.totalSteps}</Text>
                     </View>
 
 
@@ -136,22 +119,22 @@ export default function App() {
                         />
                         <View style={styles.exerciseTextContainer}>
 
-                            <Text style={styles.exerciseName}>{data.exerciseName}</Text>
+                            <Text style={styles.exerciseName}>{data?.exerciseName}</Text>
 
 
                             <View style={styles.exerciseMeta}>
                                 <View style={styles.metaItem}>
                                     <Ionicons name="time-outline" size={16} color="#04714A" />
-                                    <Text style={styles.metaText}>{data.time}</Text>
+                                    <Text style={styles.metaText}>{data?.time}</Text>
                                 </View>
                             </View>
                             {/* Tags below time/difficulty */}
                             <View style={styles.tagsContainer}>
                                 <View style={[styles.tag, styles.distanceTag]}>
-                                    <Text style={styles.tagText}>{data.distance}</Text>
+                                    <Text style={styles.tagText}>{data?.distance}</Text>
                                 </View>
                                 <View style={[styles.tag, styles.difficultyTag]}>
-                                    <Text style={styles.tagText}>{data.difficulty}</Text>
+                                    <Text style={styles.tagText}>{data?.difficulty}</Text>
                                 </View>
                             </View>
                         </View>
@@ -160,13 +143,13 @@ export default function App() {
 
 
                     {/* Description with spacing */}
-                    <Text style={styles.descriptionText}>{data.description}</Text>
+                    <Text style={styles.descriptionText}>{data?.description}</Text>
 
                     {/* Steps section */}
                     <View style={styles.stepsSection}>
                         <Text style={styles.stepsTitle}>Steps</Text>
                         <View style={styles.stepsContainer}>
-                            {data.steps.map((step, index) => (
+                            {data?.steps.map((step, index) => (
                                 <View key={index} style={styles.stepItem}>
                                     <View style={styles.stepNumber}>
                                         <Text style={styles.stepNumberText}>{index + 1}</Text>
@@ -366,7 +349,7 @@ const styles = StyleSheet.create({
         marginBottom: 25,
     },
     stepsSection: {
-        marginBottom: 20,
+        marginBottom: 60,
     },
     stepsTitle: {
         fontSize: 18,
