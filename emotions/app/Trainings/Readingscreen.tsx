@@ -14,8 +14,14 @@ import {
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams } from 'expo-router';
+import activitiesData from "@/Data/activity";
 
 export default function Indexscreen() {
+    const { id } = useLocalSearchParams();
+
+    const fulldata = activitiesData.filter((activity) => activity.id === id)[0];
+    const data = fulldata.data
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -26,7 +32,7 @@ export default function Indexscreen() {
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <AntDesign name="arrowleft" size={24} color="white" />
                 </Pressable>
-                <Text style={[styles.title, { textAlign: 'center' }]}>All Good</Text>
+                <Text style={[styles.title, { textAlign: 'center' }]}>{fulldata.title}</Text>
                 <TouchableOpacity style={styles.backButton}>
                     <Feather name="send" size={20} color={"#ffffff"} />
                 </TouchableOpacity>
@@ -48,28 +54,28 @@ export default function Indexscreen() {
                 </View>
 
                 {/* Episode Number */}
-                <Text style={styles.episodeText}>Episode 1</Text>
+                <Text style={styles.episodeText}>Type: {fulldata.type}</Text>
 
                 {/* Title */}
-                <Text style={styles.contentTitle}>Understanding Your Emotions</Text>
+                <Text style={styles.contentTitle}>{data.name}</Text>
 
                 {/* Description */}
                 <Text style={styles.description}>
-                    This episode explores the fundamental aspects of emotional awareness and how to better understand your feelings. We'll discuss techniques for identifying emotions as they arise and strategies for managing them effectively in daily life.
-
-                    {"\n\n"}You'll learn practical exercises to improve your emotional intelligence and build healthier relationships with yourself and others. The session includes guided practices and real-life examples to help you apply these concepts immediately.
+                    {data.description}
                 </Text>
 
                 {/* Spacer for the sticky button */}
                 <View style={styles.spacer} />
             </ScrollView>
 
-            {/* Sticky Continue Button at Bottom */}
+            {/*
+           
             <View style={styles.stickyButtonContainer}>
                 <TouchableOpacity style={styles.continueButton}>
-                    <Text style={styles.continueButtonText}>Continue</Text>
+                    <Text style={styles.continueButtonText}>Mark as Read</Text>
                 </TouchableOpacity>
             </View>
+            */}
         </KeyboardAvoidingView>
     );
 }
@@ -96,8 +102,8 @@ const styles = StyleSheet.create({
     },
     title: {
         fontFamily: 'Inter-Black',
-        fontSize: 20,
-        fontWeight: "600",
+        fontSize: 15,
+        fontWeight: "500",
         flex: 1,
         textAlign: 'center',
     },

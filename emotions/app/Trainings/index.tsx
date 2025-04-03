@@ -15,17 +15,6 @@ import activitiesData from "@/Data/activity";
 export default function Indexscreen() {
 
 
-  const chunkArray = (array: CardData[], chunkSize: number) => {
-    const result = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
-      result.push(array.slice(i, i + chunkSize));
-    }
-    return result;
-  };
-
-  const cardRows = chunkArray(cardsData, 2);
-
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -46,15 +35,7 @@ export default function Indexscreen() {
         showsVerticalScrollIndicator={false}
       >
         {activitiesData.map(activity => (
-          <ActivityCard
-            key={activity.id}
-            title={activity.title}
-            description={activity.description}
-            tags={activity.tags}
-            duration={activity.duration}
-            image={activity.image}
-            colors={activity.colors}
-          />
+          <ActivityCard {...activity} />
         ))}
       </ScrollView>
     </KeyboardAvoidingView>
@@ -191,7 +172,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Black',
     fontSize: 20,
     flex: 1,
-    fontWeight : 800,
+    fontWeight: 800,
     textAlign: 'center', // Center the text
   },
   backButton: {

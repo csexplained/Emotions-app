@@ -6,16 +6,19 @@ import { router } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
-
+import { useLocalSearchParams } from 'expo-router';
+import activitiesData from "@/Data/activity";
 const { width, height } = Dimensions.get('window');
 
 export default function App() {
+    const { id } = useLocalSearchParams();
+    const fulldata = activitiesData.filter((activity) => activity.id === id)[0];
+    const data = fulldata.data
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const [position, setPosition] = useState(0);
     const [duration, setDuration] = useState(0);
-
     // Load and unload audio
     useEffect(() => {
         let isMounted = true;
@@ -23,7 +26,7 @@ export default function App() {
         const loadAudio = async () => {
             try {
                 const { sound: audioSound } = await Audio.Sound.createAsync(
-                    require('@/assets/audios/test.mp3'),
+                    require('@/assets/audios/music.mp3'),
                     { shouldPlay: false },
                     onPlaybackStatusUpdate
                 );
@@ -117,8 +120,8 @@ export default function App() {
                         style={styles.image}
                     />
                     <View style={styles.imageOverlay}>
-                        <Text style={styles.imageTitle}>Forest</Text>
-                        <Text style={styles.imageSubtitle}>Christopher Fitton</Text>
+                        <Text style={styles.imageTitle}>{data.name}</Text>
+                        <Text style={styles.imageSubtitle}>{data.description}</Text>
                     </View>
                 </View>
 
