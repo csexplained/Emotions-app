@@ -23,7 +23,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/Emotionslogo.png",
         "backgroundColor": "#04714A"
-      }
+      },
+      "package": "com.bhanupratap21.Emotions"
     },
     "web": {
       "bundler": "metro",
@@ -44,6 +45,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d7881303-1379-4a3a-8d67-88b921b673c8"
+      }
     }
   }
 }

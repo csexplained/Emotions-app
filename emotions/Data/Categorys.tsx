@@ -1,113 +1,63 @@
-
 import React from "react";
-import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput } from "react-native";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import { router } from "expo-router";
-import Card from "@/components/Infotab/AngerCard";
+import { NormalIcon, HappyIcon, AngerIcon, SadIcon } from '@/assets/icons/emotionemojis';
 import Humanicon from "@/assets/icons/humanicon";
-import Categories from '@/components/Home/Categories';
-import { Entypo, Feather } from "@expo/vector-icons";
-import NotificationIcon from "@/assets/icons/Bellicon"
-import ActivityCard from "@/components/Home/ActivityCard";
 import CardData from "@/types/Carddata.types";
 
 const cardsData: CardData[] = [
   {
-    id: '1',
-    icon: <Humanicon />,
-    bgColor: "#F0F8FF",
+    id: '901', // Anger reading activity
+    icon: <AngerIcon height={55} width={55} />,
+    bgColor: "#FFE7E7",
+    iconBgColor: "#FF4A4A",
+    issueText: "Feeling Angry?",
+    description: "Learn how to use anger constructively.",
+    redirect: "/Trainings/Readingscreen?id=901"
+  },
+  {
+    id: '902', // Fear reading activity
+    icon: <SadIcon height={55} width={55} />,
+    bgColor: "#E7F3FF",
     iconBgColor: "#4A90E2",
-    issueText: "Network Issue",
-    description: "Connection problems detected"
+    issueText: "Fear Taking?",
+    description: "Discover how fear can lead to growth.",
+    redirect: "/Trainings/Readingscreen?id=902"
   },
   {
-    id: '2',
-    icon: <Humanicon />,
-    bgColor: "#FFE7DB",
-    iconBgColor: "#FF69B4",
-    issueText: "Storage Full",
-    description: "90% of storage used"
+    id: '903', // Blame reading activity
+    icon: <NormalIcon height={55} width={55} />,
+    bgColor: "#FFF4E7",
+    iconBgColor: "#FF9E00",
+    issueText: "Caught in Blame?",
+    description: "Shift blame into personal power.",
+    redirect: "/Trainings/Readingscreen?id=903"
   },
   {
-    id: '3',
-    icon: <Humanicon />,
-    bgColor: "#FFFBDB",
-    iconBgColor: "#4A90E2",
-    issueText: "Battery Low",
-    description: "Only 15% battery remaining"
+    id: '904', // Sorrow reading activity
+    icon: <SadIcon height={55} width={55} />,
+    bgColor: "#D9E6FF",
+    iconBgColor: "#6789FF",
+    issueText: "Feeling Low?",
+    description: "Explore how sorrow leads to healing.",
+    redirect: "/Trainings/Readingscreen?id=904"
   },
   {
-    id: '4',
-    icon: <Humanicon />,
-    bgColor: "#DBEBFF",
-    iconBgColor: "#FF69B4",
-    issueText: "Update Available",
-    description: "New version ready to install"
+    id: '905', // Confusion reading activity
+    icon: <Humanicon height={55} width={55} />,
+    bgColor: "#E7FFFB",
+    iconBgColor: "#00C6AE",
+    issueText: "Mentally Foggy?",
+    description: "Turn confusion into clarity.",
+    redirect: "/Trainings/Readingscreen?id=905"
   },
   {
-    id: '5',
-    icon: <Humanicon />,
-    bgColor: "#DEFFDB",
-    iconBgColor: "#4A90E2",
-    issueText: "Security Alert",
-    description: "Review recent login activity"
-  },
-  {
-    id: '6',
-    icon: <Humanicon />,
-    bgColor: "#FFDBDB",
-    iconBgColor: "#FF69B4",
-    issueText: "Memory Usage",
-    description: "High memory consumption"
-  },
-  {
-    id: '1',
-    icon: <Humanicon />,
-    bgColor: "#F0F8FF",
-    iconBgColor: "#4A90E2",
-    issueText: "Network Issue",
-    description: "Connection problems detected"
-  },
-  {
-    id: '2',
-    icon: <Humanicon />,
-    bgColor: "#FFE7DB",
-    iconBgColor: "#FF69B4",
-    issueText: "Storage Full",
-    description: "90% of storage used"
-  },
-  {
-    id: '3',
-    icon: <Humanicon />,
-    bgColor: "#FFFBDB",
-    iconBgColor: "#4A90E2",
-    issueText: "Battery Low",
-    description: "Only 15% battery remaining"
-  },
-  {
-    id: '4',
-    icon: <Humanicon />,
-    bgColor: "#DBEBFF",
-    iconBgColor: "#FF69B4",
-    issueText: "Update Available",
-    description: "New version ready to install"
-  },
-  {
-    id: '5',
-    icon: <Humanicon />,
-    bgColor: "#DEFFDB",
-    iconBgColor: "#4A90E2",
-    issueText: "Security Alert",
-    description: "Review recent login activity"
-  },
-  {
-    id: '6',
-    icon: <Humanicon />,
-    bgColor: "#FFDBDB",
-    iconBgColor: "#FF69B4",
-    issueText: "Memory Usage",
-    description: "High memory consumption"
-  },
+    id: '906', // Happiness reading activity
+    icon: <HappyIcon height={55} width={55} />,
+    bgColor: "#FFFDE7",
+    iconBgColor: "#FFD600",
+    issueText: "Want More Joy?",
+    description: "Build joy through gratitude and purpose.",
+    redirect: "/Trainings/Readingscreen?id=906"
+  }
 ];
 
-export default cardsData
+export default cardsData;

@@ -170,8 +170,8 @@ export const loginOrSignUpWithEmail = async (
             const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
             const prefix = sanitizedPrefix ? (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) : 'user';
             const userId = `${prefix}_${randomString}`.substring(0, 36);
-            
-            await account.create(ID.custom(userId), email, password, name);
+            const userID =  await ID.unique();
+            await account.create(ID.custom(userID), email, password, name);
             // Add small delay between signup and login to avoid rate limiting
             await new Promise(resolve => setTimeout(resolve, 500));
             await account.createSession(email, password);

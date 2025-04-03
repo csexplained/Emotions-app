@@ -5,6 +5,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { ExternalPathString, Link, Redirect, RelativePathString } from 'expo-router';
 
 interface ActivityCardProps {
+    id: string
     title?: string;
     description?: string;
     tags?: string[];
@@ -16,6 +17,7 @@ interface ActivityCardProps {
 
 const ActivityCard: React.FC<ActivityCardProps> = ({
     title = "Activity 1",
+    id,
     description = "This is a sample activity description",
     tags = ["Meditation", "Sleep", "Calm", "Mindfulness", "Relaxation"],
     duration = "45 min",
@@ -43,7 +45,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 end={{ x: 1, y: 1 }}
                 style={styles.gradientBackground}
             >
-                <Link href={redirect as RelativePathString}>
+                <Link href={`${redirect}?id=${id}` as RelativePathString}>
                     <View style={styles.cardContent}>
                         <View style={styles.textContent}>
                             <Text style={styles.title}>{title}</Text>
@@ -83,7 +85,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 </Link>
             </LinearGradient>
 
-        </View>
+        </View >
 
     );
 };

@@ -5,5 +5,6 @@ type CardDataTypes = {
   iconBgColor: string;
   issueText: string;
   description: string;
+  redirect: string;
 };
 export default CardDataTypes
