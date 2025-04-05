@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     View,
     Pressable,
@@ -9,12 +9,12 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     ScrollView,
-    StyleSheet,
     TouchableOpacity,
     ActivityIndicator
 } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import AboutYou from "@/types/aboutyoutypes";
+import { StyleSheet } from "react-native";
 
 interface SteptwoProps {
     step: number;
@@ -27,7 +27,30 @@ interface SteptwoProps {
     error: string | null;
 }
 
-export default function Steptwo({ step, totalsteps, error, isSubmitting, onSubmit, aboutyou, setAboutYou, setstep }: SteptwoProps) {
+export default function Steptwo({
+    step,
+    totalsteps,
+    error,
+    isSubmitting,
+    onSubmit,
+    aboutyou,
+    setAboutYou,
+    setstep
+}: SteptwoProps) {
+    const [localError, setLocalError] = useState<string | null>(null);
+
+    const validateAndSubmit = () => {
+        const unanswered = Object.entries(aboutyou).find(([_, answer]) => !answer.trim());
+
+        if (unanswered) {
+            setLocalError(`Please answer: "${unanswered[0]}"`);
+            return;
+        }
+
+        setLocalError(null); // Clear error if all answered
+        onSubmit();
+    };
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -75,11 +98,12 @@ export default function Steptwo({ step, totalsteps, error, isSubmitting, onSubmi
                         ))}
                     </View>
 
+                    {/* Error Display */}
                     <View style={styles.submitContainer}>
-                        {error && <Text style={styles.errorText}>{error}</Text>}
+                        {(localError || error) && <Text style={styles.errorText}>{localError || error}</Text>}
                         <TouchableOpacity
                             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-                            onPress={onSubmit}
+                            onPress={validateAndSubmit}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? (
@@ -89,11 +113,13 @@ export default function Steptwo({ step, totalsteps, error, isSubmitting, onSubmi
                             )}
                         </TouchableOpacity>
                     </View>
+
                 </ScrollView>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

@@ -1,3 +1,4 @@
+// Import Alert if you want to show pop-up, or continue with Text error
 import React, { useState } from "react";
 import {
     View,
@@ -11,13 +12,14 @@ import {
     ScrollView,
     StyleSheet,
     TouchableOpacity,
-    ActivityIndicator
+    ActivityIndicator,
+    Alert,
 } from "react-native";
 import { Link } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Checkbox from "expo-checkbox";
-import userdata from "@/types/userprofile.types"
+import userdata from "@/types/userprofile.types";
 import Authdata from "@/types/authdata.types";
 
 interface OtpScreenProps {
@@ -33,8 +35,55 @@ interface OtpScreenProps {
     setauthData: (authData: Authdata) => void;
 }
 
-export default function Stepone({ step, totalsteps, authData, setauthData, onSubmit, isSubmitting, error, userdata, setUserData, setstep }: OtpScreenProps) {
+export default function Stepone({
+    step,
+    totalsteps,
+    authData,
+    setauthData,
+    onSubmit,
+    isSubmitting,
+    error,
+    userdata,
+    setUserData,
+    setstep
+}: OtpScreenProps) {
     const [isChecked, setIsChecked] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
+
+    const validateAndSubmit = () => {
+        if (!userdata.firstname.trim()) {
+            setLocalError("First Name is required.");
+            return;
+        }
+        if (!userdata.lastname.trim()) {
+            setLocalError("Last Name is required.");
+            return;
+        }
+        if (!userdata.gender.trim()) {
+            setLocalError("Please select your gender.");
+            return;
+        }
+        if (!authData.phone.trim()) {
+            setLocalError("Phone number is required.");
+            return;
+        }
+        if (!userdata.city.trim()) {
+            setLocalError("City is required.");
+            return;
+        }
+        if (!userdata.country.trim()) {
+            setLocalError("Country is required.");
+            return;
+        }
+        if (!isChecked) {
+            setLocalError("You must accept the Terms and Conditions.");
+            return;
+        }
+
+        // If all validations pass
+        setLocalError(null); // Clear any previous error
+        onSubmit();
+    };
 
     return (
         <KeyboardAvoidingView
@@ -66,6 +115,7 @@ export default function Stepone({ step, totalsteps, authData, setauthData, onSub
                         </Text>
                     </View>
 
+                    {/* First & Last Name */}
                     <View style={styles.nameInputContainer}>
                         <View style={styles.nameInputWrapper}>
                             <Text style={styles.inputLabel}>First Name</Text>
@@ -88,6 +138,7 @@ export default function Stepone({ step, totalsteps, authData, setauthData, onSub
                         </View>
                     </View>
 
+                    {/* Gender Selection */}
                     <View style={styles.genderContainer}>
                         <Text style={styles.inputLabel}>Gender</Text>
                         <View style={styles.genderOptionsContainer}>
@@ -114,6 +165,7 @@ export default function Stepone({ step, totalsteps, authData, setauthData, onSub
                         </View>
                     </View>
 
+                    {/* Phone */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Mobile Number</Text>
                         <TextInput
@@ -125,18 +177,19 @@ export default function Stepone({ step, totalsteps, authData, setauthData, onSub
                         />
                     </View>
 
+                    {/* Email */}
                     <View style={styles.inputContainer}>
                         <Text style={styles.inputLabel}>Email</Text>
                         <TextInput
                             placeholder="Your Email"
                             keyboardType="email-address"
                             value={authData.email}
-                            onChangeText={(text) => setauthData({ ...authData, email: text })}
                             editable={false}
                             style={styles.textInput}
                         />
                     </View>
 
+                    {/* City & Country */}
                     <View style={styles.locationInputContainer}>
                         <View style={styles.locationInputWrapper}>
                             <Text style={styles.inputLabel}>City</Text>
@@ -158,6 +211,7 @@ export default function Stepone({ step, totalsteps, authData, setauthData, onSub
                         </View>
                     </View>
 
+                    {/* Terms and Conditions */}
                     <View style={styles.termsContainer}>
                         <Checkbox
                             style={styles.checkbox}
@@ -170,11 +224,14 @@ export default function Stepone({ step, totalsteps, authData, setauthData, onSub
                         </Text>
                     </View>
 
+                    {/* Error Message */}
                     <View style={styles.submitContainer}>
-                        {error && <Text style={styles.errorText}>{error}</Text>}
+                        {(localError || error) && <Text style={styles.errorText}>{localError || error}</Text>}
+
+                        {/* Submit Button */}
                         <TouchableOpacity
                             style={[styles.submitButton, isSubmitting && styles.submitButtonDisabled]}
-                            onPress={onSubmit}
+                            onPress={validateAndSubmit}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? (
@@ -184,11 +241,13 @@ export default function Stepone({ step, totalsteps, authData, setauthData, onSub
                             )}
                         </TouchableOpacity>
                     </View>
+
                 </ScrollView>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

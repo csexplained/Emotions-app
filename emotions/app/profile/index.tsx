@@ -34,7 +34,7 @@ export default function Indexscreen() {
         country: userprofile?.country || "",
     });
     const [aboutyou, setAboutYou] = useState<AboutYou>({
-        "Have you ever worked on your mental health?2": "",
+        "Have you ever worked on your mental health?": "",
         "How do you usually cope with stress?": "",
         "Have you ever practiced meditation or mindfulness?": "",
         "Do you have a support system (friends, family, therapist)?": "",
