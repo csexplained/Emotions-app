@@ -8,13 +8,13 @@ import { NormalIcon, HappyIcon, AngerIcon, SadIcon } from '@/assets/icons/emotio
 import CardData from "@/types/Carddata.types";
 const cardsData: CardData[] = [
     {
-        id: '901', // Anger reading activity
+        id: '904', // Anger reading activity
         icon: <AngerIcon height={35} />,
         bgColor: "#FFE7E7",
         iconBgColor: "#FF4A4A",
         issueText: "Feeling Angry?",
         description: "Learn how to use anger constructively.",
-        redirect: "/Trainings/Readingscreen?id=901"
+        redirect: "/Trainings/Readingscreen?id=904"
     },
     {
         id: '901', // Fear reading activity
@@ -23,7 +23,7 @@ const cardsData: CardData[] = [
         iconBgColor: "#4A90E2",
         issueText: "Fear Taking?",
         description: "Discover how fear can lead to growth.",
-        redirect: "/Trainings/Readingscreen?id=902"
+        redirect: "/Trainings/Readingscreen?id=901"
     },
     {
         id: '903', // Blame reading activity
@@ -35,13 +35,13 @@ const cardsData: CardData[] = [
         redirect: "/Trainings/Readingscreen?id=903"
     },
     {
-        id: '904', // Sorrow reading activity
+        id: '907', // Sorrow reading activity
         icon: <SadIcon height={35} />,
         bgColor: "#D9E6FF",
         iconBgColor: "#6789FF",
         issueText: "Feeling Low?",
         description: "Explore how sorrow leads to healing.",
-        redirect: "/Trainings/Readingscreen?id=904"
+        redirect: "/Trainings/Readingscreen?id=907"
     },
     {
         id: '905', // Confusion reading activity
