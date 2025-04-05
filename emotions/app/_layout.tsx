@@ -80,7 +80,7 @@ export default function RootLayout() {
   }, [shouldRedirect]);
 
   // Show splash or loading screen
-  if (appReady || !fontsLoaded || !sessionChecked) {
+  if (!appReady || !fontsLoaded || !sessionChecked) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <LoadingScreen />
