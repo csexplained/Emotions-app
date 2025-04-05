@@ -14,15 +14,6 @@ const cardsData: CardData[] = [
     redirect: "/Trainings/Readingscreen?id=901"
   },
   {
-    id: '902', // Fear reading activity
-    icon: <SadIcon height={55} width={55} />,
-    bgColor: "#E7F3FF",
-    iconBgColor: "#4A90E2",
-    issueText: "Fear Taking?",
-    description: "Discover how fear can lead to growth.",
-    redirect: "/Trainings/Readingscreen?id=902"
-  },
-  {
     id: '903', // Blame reading activity
     icon: <NormalIcon height={55} width={55} />,
     bgColor: "#FFF4E7",

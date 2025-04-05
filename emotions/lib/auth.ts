@@ -1,4 +1,4 @@
-import { ID, OAuthProvider } from 'appwrite';
+import { ID, OAuthProvider } from 'react-native-appwrite';
 import { account } from './appwrite';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
@@ -130,6 +130,8 @@ export const logout = async () => {
         };
     }
 };
+
+
 export const loginOrSignUpWithEmail = async (
     email: string,
     password: string,
@@ -153,7 +155,7 @@ export const loginOrSignUpWithEmail = async (
     }
     try {
         // First try to login
-        await account.createEmailPasswordSession(email, password)
+        await account.createEmailPasswordSession(email, password);
     } catch (loginError: any) {
         // Handle rate limiting
         if (loginError?.code === 429 || loginError?.message?.includes('Rate limit')) {
@@ -163,18 +165,17 @@ export const loginOrSignUpWithEmail = async (
                 isRateLimited: true,
             };
         }
-        
         // First, try to create a new account if login failed
         try {
-            const randomString = Math.random().toString(36).substring(2, 15);
-            const sanitizedPrefix = "emotions".replace(/[^a-zA-Z0-9.-_]/g, "").toLowerCase();
-            const prefix = sanitizedPrefix ? (sanitizedPrefix.match(/^[a-zA-Z]/) ? sanitizedPrefix : `e${sanitizedPrefix}`) : 'user';
-            const userId = `${prefix}_${randomString}`.substring(0, 36);
-            const userID =  await ID.unique();
-            await account.create(ID.custom(userID), email, password, name);
+            // Use Appwrite's built-in ID generation instead of react-native-uuid
+            const userId = ID.unique();
+
+            // Create the account with Appwrite's ID generator
+            await account.create(userId, email, password, name);
+
             // Add small delay between signup and login to avoid rate limiting
             await new Promise(resolve => setTimeout(resolve, 500));
-            await account.createSession(email, password);
+            await account.createEmailPasswordSession(email, password);
         } catch (signupError: any) {
             // If signup failed because email exists, it means the original login
             // failed due to wrong password
@@ -184,7 +185,6 @@ export const loginOrSignUpWithEmail = async (
                     error: "Wrong password. Please try again.",
                 };
             }
-            
             if (signupError?.code === 429) {
                 return {
                     success: false,
@@ -192,7 +192,6 @@ export const loginOrSignUpWithEmail = async (
                     isRateLimited: true,
                 };
             }
-            
             console.error("Signup failed:", signupError);
             return {
                 success: false,
@@ -200,7 +199,6 @@ export const loginOrSignUpWithEmail = async (
             };
         }
     }
-    
     try {
         // Success case - get user data
         const user = await account.get();

@@ -49,15 +49,17 @@ export default function AuthIndexScreen() {
                     <Text style={styles.title}>Discover Experiences with a simple swipe</Text>
                     <Text style={styles.subtitle}>Curated activities at your fingertips</Text>
 
+                    {/*
                     <Link href="/auth/login" asChild>
                         <Pressable style={styles.signUpButton}>
                             <Text style={styles.signUpButtonText}>Sign Via OTP</Text>
                         </Pressable>
                     </Link>
+                   */}
 
                     <Link href="/auth/signup" asChild>
                         <Pressable style={styles.signUpButton2}>
-                            <Text style={styles.signUpButtonText}>Sign Via Email</Text>
+                            <Text style={styles.signUpButtonText}>Sign Up</Text>
                         </Pressable>
                     </Link>
                 </View>
@@ -80,7 +82,7 @@ const styles = StyleSheet.create({
     topSection: {
         backgroundColor: '#F0FFFA',
         width: '100%',
-        height: '65%'
+        height: '70%'
     },
     imageContainer: {
         flex: 1,

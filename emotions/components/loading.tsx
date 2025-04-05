@@ -8,7 +8,10 @@ export default function LoadingScreen() {
                 style={styles.logo}
                 resizeMode="contain"
             />
-            <Text style={styles.title}>EMOTIONS Ai</Text>
+            <View style={styles.headerText}>
+                <Text style={styles.headerTitle}>Emotions <Text style={styles.aiText}>Ai</Text></Text>
+                {/* <Text style={styles.statusText}>By IIt Madras</Text> */}
+            </View>
         </View>
     );
 }
@@ -23,16 +26,29 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     logo: {
-        height: undefined,
-        width: undefined,
         aspectRatio: 1,
-        maxHeight: '100%',
-        maxWidth: '100%',
+        width: 100,
+        height: 100,
     },
     title: {
         color: 'white',
         fontSize: 18,
         fontFamily: 'sans-serif',
         fontWeight: '600',
+    },
+    headerText: {
+        flexDirection: 'column',
+    },
+    headerTitle: {
+        fontSize: 25,
+        fontWeight: 'bold',
+    },
+    aiText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    statusText: {
+        fontSize: 12,
+        color: 'white',
     },
 });
