@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform } from "react-native";
 import EmailScreen from "@/components/authflow/EmailScreen";
 import PasswordScreen from "@/components/authflow/PasswordScreen";
 import ThankYouScreen from "@/components/CompleteScreen";
-import { useAuthStore } from "@/store/authStore"; // ✅ Correct
-import { loginOrSignUpWithEmail } from "@/lib/auth";
-import { User } from "@/types/auth.types";
+import { useAuthStore } from "@/store/authStore";
 import UserProfileService from "@/lib/userProfileService";
-import Userprofile from "@/types/userprofile.types";
+import { loginOrSignUpWithEmail } from "@/lib/auth";
+
 export default function EmailLoginScreen() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [email, setEmail] = useState("");
@@ -59,7 +58,7 @@ export default function EmailLoginScreen() {
 
     setLoading(true);
     try {
-      const response: { success: boolean; error?: any; user?: User; shouldRetry?: boolean; } = await loginOrSignUpWithEmail(email, password, "User");
+      const response = await loginOrSignUpWithEmail(email, password, "User");
       if (response.success) {
         if (response.user && response.user.$id) {
           const userProfile = await UserProfileService.getUserProfile(response.user.$id);
@@ -68,11 +67,11 @@ export default function EmailLoginScreen() {
             setRedirect("/");
           }
         }
-        //console.log(response.user?.$id)
+        console.log(response.user?.$id);
         setUser(response.user ?? null);
         setStep(3); // Go to Thank You screen
       } else {
-        if (response.shouldRetry) {
+        if (response.isRateLimited) {
           // Set 30 second cooldown for rate limits
           setRetryDelay(30);
           Alert.alert(
