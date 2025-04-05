@@ -5,58 +5,8 @@ import * as Google from 'expo-auth-session/providers/google';
 import { useAuthStore } from '@/store/authStore';
 import { makeRedirectUri } from 'expo-auth-session';
 import { User } from '@/types/auth.types';
-import * as Crypto from 'expo-crypto';
 
 WebBrowser.maybeCompleteAuthSession();
-// 1. Strict validation that matches Appwrite's server-side rules
-const isValidAppwriteId = (id: string): boolean => {
-    return (
-        id.length > 0 &&
-        id.length <= 36 &&
-        /^[a-zA-Z0-9]/.test(id) && // Starts with alphanumeric
-        /^[a-zA-Z0-9._-]*$/.test(id) && // Only allowed chars
-        !/([._-]){2,}/.test(id) && // No consecutive special chars
-        !/[A-Z]/.test(id) // No uppercase letters (just to be extra safe)
-    );
-};
-
-// 2. Atomic ID generator with 100% validity guarantee
-const generateAppwriteId = async (prefix: string = 'user'): Promise<string> => {
-    // Clean prefix to guarantee valid start
-    const cleanPrefix = prefix
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '')
-        .replace(/^[^a-z]/, 'u') // Ensure starts with letter
-        .substring(0, 10);
-
-    // Generate random suffix with crypto strength
-    const randomBytes = await Crypto.getRandomBytesAsync(12);
-    const randomSuffix = Array.from(randomBytes)
-        .map((byte) => (byte % 36).toString(36)) // 0-9a-z
-        .join('')
-        .replace(/[^a-z0-9]/g, '');
-
-    // Construct ID with safety separators
-    let candidate = `${cleanPrefix}_${randomSuffix}`
-        .toLowerCase() // Force lowercase
-        .substring(0, 36) // Hard length limit
-        .replace(/[^a-z0-9._-]/g, '') // Strip invalid chars
-        .replace(/^[^a-z]/, 'u') // Final start char check
-        .replace(/([._-]){2,}/g, '_'); // No consecutive special chars
-
-    // Final validation (should never fail)
-    if (!isValidAppwriteId(candidate)) {
-        // Ultimate fallback - guaranteed to pass
-        return `user_${(await Crypto.getRandomBytesAsync(8))
-            .toString()
-            .replace(/\D/g, '')
-            .slice(0, 8)}`;
-    }
-
-    return candidate;
-};
-
-
 
 export const useGoogleAuth = () => {
     const [request, response, promptAsync] = Google.useAuthRequest({
@@ -181,6 +131,7 @@ export const logout = async () => {
     }
 };
 
+
 export const loginOrSignUpWithEmail = async (
     email: string,
     password: string,
@@ -204,7 +155,7 @@ export const loginOrSignUpWithEmail = async (
     }
     try {
         // First try to login
-        await account.createEmailPasswordSession(email, password)
+        await account.createEmailPasswordSession(email, password);
     } catch (loginError: any) {
         // Handle rate limiting
         if (loginError?.code === 429 || loginError?.message?.includes('Rate limit')) {
@@ -216,16 +167,15 @@ export const loginOrSignUpWithEmail = async (
         }
         // First, try to create a new account if login failed
         try {
-            // Generate guaranteed valid userID
-            const userId = await generateAppwriteId('emotions');
-            console.log('Using guaranteed valid userId:', userId);
+            // Use Appwrite's built-in ID generation instead of react-native-uuid
+            const userId = ID.unique();
 
-            await account.create(ID.custom(String(userId)), email, password, name);
+            // Create the account with Appwrite's ID generator
+            await account.create(userId, email, password, name);
 
-            // await account.create(ID.custom(userId), email, password, name);
             // Add small delay between signup and login to avoid rate limiting
             await new Promise(resolve => setTimeout(resolve, 500));
-            await account.createSession(email, password);
+            await account.createEmailPasswordSession(email, password);
         } catch (signupError: any) {
             // If signup failed because email exists, it means the original login
             // failed due to wrong password
