@@ -76,7 +76,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
                         <View style={styles.imageContainer}>
                             <ImageBackground
-                                source={image}
+                                source={{ uri: image }}
                                 style={styles.image}
                                 resizeMode="contain"
                             />
