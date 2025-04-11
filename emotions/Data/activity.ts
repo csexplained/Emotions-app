@@ -9,6 +9,7 @@ const activitiesData = [
     image: require('@/assets/images/ActivityCard.png'),
     colors: ["#E7F3FF", "#9ECBFF"] as [string, string],
     redirect: "/Trainings/Musicplayer",
+    activitytype: "Read",
     data: {
       name: "Night Vibes",
       currentStep: 1,

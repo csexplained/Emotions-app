@@ -1,4 +1,4 @@
-import React, { act, useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,34 +7,64 @@ import {
     TouchableOpacity,
     Dimensions,
     Animated,
-    ScrollView
+    ScrollView,
+    ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
-import activitiesData from '@/Data/activity';
-import { useLocalSearchParams } from 'expo-router';
+import ActivityService from '@/lib/activity';
+import { ActivityType } from '@/types/activitycard.types';
+
+// Define the type for steps if not already defined
+type StepType = string; // Adjust this type based on your actual data structure
+
 const { width, height } = Dimensions.get('window');
 
-const images = [
-    require('@/assets/images/image.png'),
-    require('@/assets/images/brain.png'),
-    require('@/assets/images/image.png'),
-    require('@/assets/images/image.png'),
-    require('@/assets/images/brain.png'),
-    require('@/assets/images/image.png'),
-];
-
-
-export default function App() {
-
+export default function ActivityDetailScreen() {
     const scrollX = useRef(new Animated.Value(0)).current;
-    const scrollViewRef = useRef<ScrollView>(null);
+    const [activity, setActivity] = useState<(ActivityType & { steps?: StepType[] }) | null>(null);
     const { id } = useLocalSearchParams();
 
-    const fulldata = activitiesData.filter((activity) => activity.id === id)[0];
-    const data = fulldata.data
+    const scrollViewRef = useRef<ScrollView>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [images, setImages] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchActivity = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                if (typeof id !== 'string') {
+                    throw new Error('Invalid activity ID');
+                }
+
+                const fetchedActivity = await ActivityService.getActivityById(id);
+                setActivity(fetchedActivity);
+
+                // Set images from the activity data or use defaults
+                if (fetchedActivity.imagepath) {
+                    setImages(fetchedActivity.imagepath);
+                } else {
+                    setImages([
+                        require('@/assets/images/image.png'),
+                        require('@/assets/images/brain.png')
+                    ]);
+                }
+            } catch (err) {
+                console.error('Error fetching activity:', err);
+                setError('Failed to load activity. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchActivity();
+    }, [id]);
+
     const renderDotIndicators = () => {
         return (
             <View style={styles.dotContainer}>
@@ -54,6 +84,42 @@ export default function App() {
             </View>
         );
     };
+
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color="#04714A" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={[styles.container, styles.errorContainer]}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={() => router.back()}
+                >
+                    <Text style={styles.retryButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    if (!activity) {
+        return (
+            <View style={[styles.container, styles.errorContainer]}>
+                <Text style={styles.errorText}>Activity not found</Text>
+                <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={() => router.back()}
+                >
+                    <Text style={styles.retryButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
@@ -84,7 +150,11 @@ export default function App() {
                 >
                     {images.map((image, index) => (
                         <View key={index} style={styles.slide}>
-                            <Image source={image} style={styles.slideImage} />
+                            {typeof image === 'string' ? (
+                                <Image source={{ uri: image }} style={styles.slideImage} />
+                            ) : (
+                                <Image source={image} style={styles.slideImage} />
+                            )}
                         </View>
                     ))}
                 </ScrollView>
@@ -92,8 +162,8 @@ export default function App() {
 
                 {/* Fixed Text Overlay */}
                 <View style={styles.textOverlay}>
-                    <Text style={styles.name}>{fulldata?.title}</Text>
-                    <Text style={styles.description}>{fulldata?.description}</Text>
+                    <Text style={styles.name}>{activity.title}</Text>
+                    <Text style={styles.description}>{activity.description}</Text>
                 </View>
             </View>
 
@@ -107,49 +177,54 @@ export default function App() {
                     {/* Section Title with Spacing */}
                     <View style={styles.topbox}>
                         <Text style={styles.sectionTitle}>Steps</Text>
-                        <Text style={styles.sectionTitle}>{data.currentStep}/{data.totalSteps}</Text>
+                        <Text style={styles.sectionTitle}>{activity.currentStep || 0}/{activity.totalSteps || 0}</Text>
                     </View>
-
 
                     {/* Exercise Header with Image */}
                     <View style={styles.exerciseHeader}>
-                        <Image
-                            source={require('@/assets/images/brain.png')}
-                            style={styles.exerciseImage}
-                        />
+                        {activity.imagepath ? (
+                            <Image source={{ uri: Array.isArray(activity.imagepath) ? activity.imagepath[0] : activity.imagepath }} style={styles.exerciseImage} />
+                        ) : (
+                            <Image source={require('@/assets/images/brain.png')} style={styles.exerciseImage} />
+                        )}
                         <View style={styles.exerciseTextContainer}>
-
-                            <Text style={styles.exerciseName}>{data?.exerciseName}</Text>
-
+                            <Text style={styles.exerciseName}>{activity.exerciseName || activity.name}</Text>
 
                             <View style={styles.exerciseMeta}>
-                                <View style={styles.metaItem}>
-                                    <Ionicons name="time-outline" size={16} color="#04714A" />
-                                    <Text style={styles.metaText}>{data?.time}</Text>
-                                </View>
+                                {activity.time && (
+                                    <View style={styles.metaItem}>
+                                        <Ionicons name="time-outline" size={16} color="#04714A" />
+                                        <Text style={styles.metaText}>{activity.time}</Text>
+                                    </View>
+                                )}
                             </View>
+
                             {/* Tags below time/difficulty */}
                             <View style={styles.tagsContainer}>
-                                <View style={[styles.tag, styles.distanceTag]}>
-                                    <Text style={styles.tagText}>{data?.distance}</Text>
-                                </View>
-                                <View style={[styles.tag, styles.difficultyTag]}>
-                                    <Text style={styles.tagText}>{data?.difficulty}</Text>
-                                </View>
+                                {activity.distance && (
+                                    <View style={[styles.tag, styles.distanceTag]}>
+                                        <Text style={styles.tagText}>{activity.distance}</Text>
+                                    </View>
+                                )}
+                                {activity.difficulty && (
+                                    <View style={[styles.tag, styles.difficultyTag]}>
+                                        <Text style={styles.tagText}>{activity.difficulty}</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
                     </View>
 
-
-
                     {/* Description with spacing */}
-                    <Text style={styles.descriptionText}>{data?.description}</Text>
+                    {activity.activityDescription && (
+                        <Text style={styles.descriptionText}>{activity.activityDescription}</Text>
+                    )}
 
                     {/* Steps section */}
                     <View style={styles.stepsSection}>
                         <Text style={styles.stepsTitle}>Steps</Text>
                         <View style={styles.stepsContainer}>
-                            {data?.steps.map((step, index) => (
+                            {activity.steps?.map((step, index) => (
                                 <View key={index} style={styles.stepItem}>
                                     <View style={styles.stepNumber}>
                                         <Text style={styles.stepNumberText}>{index + 1}</Text>
@@ -164,7 +239,9 @@ export default function App() {
                 {/* Continue Button */}
                 <View style={styles.buttonWrapper}>
                     <TouchableOpacity style={styles.continueButton}>
-                        <Text style={styles.continueButtonText}>Continue</Text>
+                        <Text style={styles.continueButtonText}>
+                            {activity.activitytype === 'Read' ? 'Mark as Complete' : 'Continue'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -407,4 +484,30 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    retryButton: {
+        backgroundColor: '#04714A',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 5,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+
 });
