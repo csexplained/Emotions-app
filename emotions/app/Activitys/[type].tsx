@@ -160,9 +160,15 @@ export default function ActivitiesByTypeScreen() {
             >
                 {activities.map(activity => (
                     <ActivityCard
-                        key={activity.$id}
                         id={activity.$id}
-                        {...activity}
+                        redirect={`/Trainings/${activity.redirect}?id=${activity.$id}`}
+                        key={activity.$id}
+                        title={activity.title}
+                        description={activity.description}
+                        tags={activity.tags}
+                        duration={activity.duration}
+                        image={activity.image}
+                        colors={activity.colors}
                     />
                 ))}
 
