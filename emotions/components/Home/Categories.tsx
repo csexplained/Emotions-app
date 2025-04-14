@@ -15,7 +15,7 @@ const Categories = ({ categories = [] }) => {
             <Text style={{ fontWeight: '800', fontSize: 20, marginBottom: 5 }}>Categories</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingVertical: 5 }}>
                 {items.map((item, index) => (
-                    <Link  key={index} style={{ marginRight: 10 }} href={item.redirect as RelativePathString}>
+                    <Link key={index} style={{ marginRight: 10 }} href={`/Activitys/${item.type}` as RelativePathString}>
                         <View
                             style={{
                                 backgroundColor: item.bgColor,

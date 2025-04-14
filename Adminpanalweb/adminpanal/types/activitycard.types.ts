@@ -1,4 +1,4 @@
-import { ImageSourcePropType } from "react-native";
+
 
 export interface ActivityType {
     $id: string;
@@ -7,13 +7,13 @@ export interface ActivityType {
     description: string;
     tags: string[];
     duration: string;
-    image: ImageSourcePropType;
+    image: string;
     colors: [string, string];
     redirect: string;
     activitytype: "Read" | "Music" | "Exercise" | string;
     name: string;
-    currentStep?: number;
-    totalSteps?: number;
+    currentStep?: string;
+    totalSteps?: string;
     exerciseName?: string;
     imagepath: string[],
     Musicpath: string,

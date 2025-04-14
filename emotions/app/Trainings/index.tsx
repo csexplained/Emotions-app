@@ -1,19 +1,96 @@
-import React from "react";
-import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput, ActivityIndicator, RefreshControl } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { router } from "expo-router";
-import Card from "@/components/Infotab/AngerCard";
-import Humanicon from "@/assets/icons/humanicon";
-import Categories from '@/components/Home/Categories';
-import cardsData from '@/Data/Categorys'
-import { Entypo, Feather } from "@expo/vector-icons";
-import NotificationIcon from "@/assets/icons/Bellicon"
 import ActivityCard from "@/components/Home/ActivityCard";
-import CardData from "@/types/Carddata.types";
-import activitiesData from "@/Data/activity";
+import ActivityService from "@/lib/activity";
+import { ActivityType } from "@/types/activitycard.types";
 
 export default function Indexscreen() {
+  const [activities, setActivities] = useState<ActivityType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
+  const limit = 10; // Number of items per page
+
+  // Fetch activities with pagination
+  const fetchActivities = useCallback(async (pageNum: number, isRefreshing = false) => {
+    try {
+      if (!isRefreshing) setLoading(true);
+      setError(null);
+
+      const newActivities = await ActivityService.getActivities({
+        limit,
+        offset: (pageNum - 1) * limit,
+        filters: searchQuery ? {
+          // Add search filters here based on your requirements
+          // For example, search by title or tags
+          type: searchQuery,
+        } : {},
+        sortField: "title",
+        sortOrder: "asc",
+      });
+
+      if (newActivities.length === 0) {
+        setHasMore(false);
+      } else {
+        if (pageNum === 1) {
+          setActivities(newActivities);
+        } else {
+          setActivities(prev => [...prev, ...newActivities]);
+        }
+      }
+    } catch (err) {
+      setError("Failed to fetch trainings. Please try again.");
+      console.error("Error fetching trainings:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [searchQuery]);
+
+  // Initial load
+  useEffect(() => {
+    fetchActivities(1);
+  }, [fetchActivities]);
+
+  // Handle refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setPage(1);
+    setHasMore(true);
+    fetchActivities(1, true);
+  }, [fetchActivities]);
+
+  // Handle infinite scroll
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+      fetchActivities(page + 1);
+    }
+  };
+
+  // Handle search
+  const handleSearch = () => {
+    setPage(1);
+    setHasMore(true);
+    fetchActivities(1);
+  };
+
+  if (error && activities.length === 0) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Pressable onPress={() => fetchActivities(1)} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -26,25 +103,95 @@ export default function Indexscreen() {
           <AntDesign name="arrowleft" size={24} color="white" />
         </Pressable>
         <Text style={[styles.title, { textAlign: 'center' }]}>Trainings</Text>
-        {/* Add an empty view to balance the flex layout */}
         <View style={styles.backButton2} />
       </View>
+
+      {/* Search Bar */}
+      <View style={styles.header}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Search trainings..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          <Pressable
+            style={styles.sendButton}
+            onPress={handleSearch}
+          >
+            <AntDesign
+              name="search1"
+              size={20}
+              color={"#ffffff"}
+            />
+          </Pressable>
+        </View>
+      </View>
+
       {/* Scrollable Content */}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#04714A"]}
+            tintColor="#04714A"
+          />
+        }
+        onScroll={({ nativeEvent }) => {
+          if (isCloseToBottom(nativeEvent) && !loading && hasMore) {
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={400}
       >
-        {activitiesData.map(activity => (
-          <ActivityCard {...activity} />
+        {activities.map(activity => (
+          <ActivityCard
+            key={activity.$id}
+            id={activity.$id}
+            {...activity}
+          />
         ))}
+
+        {loading && activities.length > 0 && (
+          <View style={styles.loadingMoreContainer}>
+            <ActivityIndicator size="small" color="#04714A" />
+          </View>
+        )}
+
+        {!hasMore && (
+          <View style={styles.endOfListContainer}>
+            <Text style={styles.endOfListText}>No more trainings to show</Text>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Full screen loading indicator */}
+      {loading && activities.length === 0 && (
+        <View style={styles.fullScreenLoading}>
+          <ActivityIndicator size="large" color="#04714A" />
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
 
+// Helper function to check if scroll is near bottom
+const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) => {
+  const paddingToBottom = 20;
+  return (
+    layoutMeasurement.height + contentOffset.y >=
+    contentSize.height - paddingToBottom
+  );
+};
+
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 12;
-const CARD_WIDTH = (width - (CARD_MARGIN * 3)) / 2; // 2 cards per row
+const CARD_WIDTH = (width - (CARD_MARGIN * 3)) / 2;
 
 const styles = StyleSheet.create({
   inputContainer: {
@@ -198,4 +345,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: CARD_MARGIN,
   },
 
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: "#F0FFFA",
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#04714A',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  loadingMoreContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endOfListContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endOfListText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  fullScreenLoading: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
 });
