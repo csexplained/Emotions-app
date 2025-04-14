@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Pressable,
@@ -9,19 +9,83 @@ import {
     Platform,
     StyleSheet,
     Dimensions,
-    TouchableOpacity
+    TouchableOpacity,
+    ActivityIndicator
 } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams } from 'expo-router';
-import activitiesData from "@/Data/activity";
+import ActivityService from "@/lib/activity";
+import { ActivityType } from "@/types/activitycard.types";
 
-export default function Indexscreen() {
+const { width } = Dimensions.get('window');
+const IMAGE_HEIGHT = (width * 9) / 16; // 16:9 aspect ratio
+
+export default function ActivityDetailScreen() {
     const { id } = useLocalSearchParams();
+    const [activity, setActivity] = useState<ActivityType | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const fulldata = activitiesData.filter((activity) => activity.id === id)[0];
-    const data = fulldata.data
+    useEffect(() => {
+        const fetchActivity = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                if (typeof id !== 'string') {
+                    throw new Error('Invalid activity ID');
+                }
+
+                const fetchedActivity = await ActivityService.getActivityById(id);
+                setActivity(fetchedActivity);
+            } catch (err) {
+                console.error('Error fetching activity:', err);
+                setError('Failed to load activity. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchActivity();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color="#04714A" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={[styles.container, styles.errorContainer]}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={() => router.back()}
+                >
+                    <Text style={styles.retryButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    if (!activity) {
+        return (
+            <View style={[styles.container, styles.errorContainer]}>
+                <Text style={styles.errorText}>Activity not found</Text>
+                <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={() => router.back()}
+                >
+                    <Text style={styles.retryButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -32,7 +96,7 @@ export default function Indexscreen() {
                 <Pressable onPress={() => router.back()} style={styles.backButton}>
                     <AntDesign name="arrowleft" size={24} color="white" />
                 </Pressable>
-                <Text style={[styles.title, { textAlign: 'center' }]}>{fulldata.title}</Text>
+                <Text style={[styles.title, { textAlign: 'center' }]}>{activity.title}</Text>
                 <TouchableOpacity style={styles.backButton}>
                     <Feather name="send" size={20} color={"#ffffff"} />
                 </TouchableOpacity>
@@ -47,41 +111,66 @@ export default function Indexscreen() {
                 <View style={{ paddingHorizontal: 14 }}>
                     {/* 16:9 Image at the top */}
                     <Image
-                        source={require('@/assets/images/Allgood.png')}
+                        source={{ uri: activity.imagepath[0] }} // Using the image from API
                         style={styles.topImage}
                         resizeMode="contain"
                     />
                 </View>
 
-                {/* Episode Number */}
-                <Text style={styles.episodeText}>Type: {fulldata.type}</Text>
+                {/* Activity Type */}
+                <Text style={styles.episodeText}>Type: {activity.type}</Text>
 
                 {/* Title */}
-                <Text style={styles.contentTitle}>{data.name}</Text>
+                <Text style={styles.contentTitle}>{activity.name}</Text>
 
                 {/* Description */}
                 <Text style={styles.description}>
-                    {data.description}
+                    {activity.description}
                 </Text>
+
+                {/* Additional Activity Details */}
+                {activity.activityDescription && (
+                    <>
+                        <Text style={styles.sectionTitle}>About This Activity</Text>
+                        <Text style={styles.description}>
+                            {activity.activityDescription}
+                        </Text>
+                    </>
+                )}
+
+                {/* Steps if available */}
+                {activity.steps && activity.steps.length > 0 && (
+                    <>
+                        <Text style={styles.sectionTitle}>Steps</Text>
+                        {activity.steps.map((step: string, index: number) => (
+                            <View key={index} style={styles.stepContainer}>
+                                <View style={styles.stepNumber}>
+                                    <Text style={styles.stepNumberText}>{index + 1}</Text>
+                                </View>
+                                <Text style={styles.stepText}>{step}</Text>
+                            </View>
+                        ))}
+                    </>
+                )}
 
                 {/* Spacer for the sticky button */}
                 <View style={styles.spacer} />
             </ScrollView>
 
-            {/*
-           
+            {/* Sticky Button at Bottom 
             <View style={styles.stickyButtonContainer}>
                 <TouchableOpacity style={styles.continueButton}>
-                    <Text style={styles.continueButtonText}>Mark as Read</Text>
+                    <Text style={styles.continueButtonText}>
+                        {activity.activitytype === 'Read' ? 'Mark as Read' : 'Start Activity'}
+                    </Text>
                 </TouchableOpacity>
             </View>
+
             */}
+
         </KeyboardAvoidingView>
     );
 }
-
-const { width } = Dimensions.get('window');
-const IMAGE_HEIGHT = (width * 9) / 16; // 16:9 aspect ratio
 
 const styles = StyleSheet.create({
     scrollContainer: {
@@ -167,5 +256,68 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: '600',
+    },
+    container: {
+        flex: 1,
+        backgroundColor: '#F0FFFA',
+    },
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    retryButton: {
+        backgroundColor: '#04714A',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 5,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#04714A',
+        paddingHorizontal: 20,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    stepContainer: {
+        flexDirection: 'row',
+        marginBottom: 15,
+        paddingHorizontal: 20,
+        alignItems: 'flex-start',
+    },
+    stepNumber: {
+        backgroundColor: '#04714A',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    stepNumberText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    stepText: {
+        flex: 1,
+        fontSize: 16,
+        lineHeight: 22,
+        color: '#333',
     },
 });

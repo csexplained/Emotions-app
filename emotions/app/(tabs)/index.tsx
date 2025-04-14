@@ -1,24 +1,108 @@
-import React from "react";
-import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput } from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput, ActivityIndicator, RefreshControl } from "react-native";
 import { Link } from "expo-router";
 import Categories from '@/components/Home/Categories';
 import { Feather } from "@expo/vector-icons";
 import NotificationIcon from "@/assets/icons/Bellicon"
 import ActivityCard from "@/components/Home/ActivityCard";
-import activitiesData from "@/Data/activity";
 import { useAuthStore } from "@/store/authStore";
+import ActivityService from "@/lib/activity"; // Import the service we created earlier
+import { ActivityType } from "@/types/activitycard.types";
+
 
 export default function Indexscreen() {
-
   const userprofile = useAuthStore(state => state.userProfile);
+  const [activities, setActivities] = useState<ActivityType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
 
+  const limit = 10; // Number of items per page
+
+  // Fetch activities with pagination
+  const fetchActivities = useCallback(async (pageNum: number, isRefreshing = false) => {
+    try {
+      if (!isRefreshing) setLoading(true);
+      setError(null);
+
+      const newActivities = await ActivityService.getActivities({
+        limit,
+        offset: (pageNum - 1) * limit,
+        filters: searchQuery ? {
+          // Add search filters here based on your requirements
+          // For example, search by title or tags
+          type: searchQuery,
+        } : {},
+        sortField: "title",
+        sortOrder: "asc",
+      });
+
+      if (newActivities.length === 0) {
+        setHasMore(false);
+      } else {
+        if (pageNum === 1) {
+          setActivities(newActivities);
+          //console.log("Activities fetched:", newActivities[0].redirect);
+        } else {
+          setActivities(prev => [...prev, ...newActivities]);
+        }
+      }
+    } catch (err) {
+      setError("Failed to fetch activities. Please try again.");
+      console.error("Error fetching activities:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [searchQuery]);
+
+  // Initial load
+  useEffect(() => {
+    fetchActivities(1);
+  }, [fetchActivities]);
+
+  // Handle refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setPage(1);
+    setHasMore(true);
+    fetchActivities(1, true);
+  }, [fetchActivities]);
+
+  // Handle infinite scroll
+  const handleLoadMore = () => {
+    if (!loading && hasMore) {
+      setPage(prev => prev + 1);
+      fetchActivities(page + 1);
+    }
+  };
+
+  // Handle search
+  const handleSearch = () => {
+    setPage(1);
+    setHasMore(true);
+    fetchActivities(1);
+  };
+
+  if (error && activities.length === 0) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Pressable onPress={() => fetchActivities(1)} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1, backgroundColor: "#F0FFFA" }}
     >
-
       {/* Sticky Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -28,23 +112,32 @@ export default function Indexscreen() {
           />
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>{userprofile?.firstname} {userprofile?.lastname}</Text>
-            <View style={styles.flexbox}><Text style={styles.statusText}> <Text style={{ color: "#04714A", marginRight: 2 }}>• </Text>Meditation</Text></View>
+            <View style={styles.flexbox}>
+              <Text style={styles.statusText}>
+                <Text style={{ color: "#04714A", marginRight: 2 }}>• </Text>Meditation
+              </Text>
+            </View>
           </View>
         </View>
         <Pressable style={styles.menuButton}>
           <NotificationIcon />
         </Pressable>
       </View>
+
+      {/* Search Bar */}
       <View style={styles.header}>
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Search"
-            multiline
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
           <Pressable
             style={styles.sendButton}
-
+            onPress={handleSearch}
           >
             <Feather
               name="search"
@@ -54,38 +147,41 @@ export default function Indexscreen() {
           </Pressable>
         </View>
       </View>
+
       <Categories />
-      <View style={{
-        paddingHorizontal: 16,
-        paddingVertical: 5,
-        flexDirection: 'row',
-        alignItems: 'center',  // This vertically centers children
-        justifyContent: 'space-between',
-        width: '100%',  // Better than "auto" for full width
-      }}>
-        <Text style={{
-          fontWeight: '800',
-          fontSize: 20,
-          // Remove marginBottom as it affects alignment
-        }}>Trainings</Text>
-        <Link href={"/Trainings"} style={{
-          color: "#04714A",
-          fontWeight: '800',
-          fontSize: 15,
-          // Add vertical padding to compensate for smaller font
-          paddingVertical: 2.5  // (20-15)/2 = 2.5 to center perfectly
-        }}>See All</Link>
+
+      {/* Section Header */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Trainings</Text>
+        <Link href={"/Trainings"} style={styles.seeAllLink}>
+          See All
+        </Link>
       </View>
+
       {/* Scrollable Content */}
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#04714A"]}
+            tintColor="#04714A"
+          />
+        }
+        onScroll={({ nativeEvent }) => {
+          if (isCloseToBottom(nativeEvent) && !loading && hasMore) {
+            handleLoadMore();
+          }
+        }}
+        scrollEventThrottle={400}
       >
-        {activitiesData.map(activity => (
+        {activities.map(activity => (
           <ActivityCard
-            id={activity.id}
-            redirect={activity.redirect}
-            key={activity.id}
+            id={activity.$id}
+            redirect={`Trainings/${activity.redirect}?id=${activity.$id}`}
+            key={activity.$id}
             title={activity.title}
             description={activity.description}
             tags={activity.tags}
@@ -94,10 +190,39 @@ export default function Indexscreen() {
             colors={activity.colors}
           />
         ))}
+
+        {loading && activities.length > 0 && (
+          <View style={styles.loadingMoreContainer}>
+            <ActivityIndicator size="small" color="#04714A" />
+          </View>
+        )}
+
+        {!hasMore && (
+          <View style={styles.endOfListContainer}>
+            <Text style={styles.endOfListText}>No more activities to show</Text>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Full screen loading indicator */}
+      {loading && activities.length === 0 && (
+        <View style={styles.fullScreenLoading}>
+          <ActivityIndicator size="large" color="#04714A" />
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }
+
+// Helper function to check if scroll is near bottom
+const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) => {
+  const paddingToBottom = 20;
+  return (
+    layoutMeasurement.height + contentOffset.y >=
+    contentSize.height - paddingToBottom
+  );
+};
+
 
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 12;
@@ -254,4 +379,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: CARD_MARGIN,
   },
 
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  sectionTitle: {
+    fontWeight: '800',
+    fontSize: 20,
+  },
+  seeAllLink: {
+    color: "#04714A",
+    fontWeight: '800',
+    fontSize: 15,
+    paddingVertical: 2.5,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: "#F0FFFA",
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#04714A',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  loadingMoreContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endOfListContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  endOfListText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  fullScreenLoading: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
 });

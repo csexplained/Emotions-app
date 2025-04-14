@@ -1,32 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider';
-import { useLocalSearchParams } from 'expo-router';
-import activitiesData from "@/Data/activity";
+import ActivityService from '@/lib/activity';
+import { ActivityType } from '@/types/activitycard.types';
+
 const { width, height } = Dimensions.get('window');
 
-export default function App() {
+export default function ActivityDetailScreen() {
     const { id } = useLocalSearchParams();
-    const fulldata = activitiesData.filter((activity) => activity.id === id)[0];
-    const data = fulldata.data
+    const [activity, setActivity] = useState<ActivityType | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const [position, setPosition] = useState(0);
     const [duration, setDuration] = useState(0);
+
+    // Fetch activity by ID
+    useEffect(() => {
+        const fetchActivity = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+
+                if (typeof id !== 'string') {
+                    throw new Error('Invalid activity ID');
+                }
+
+                const fetchedActivity = await ActivityService.getActivityById(id);
+                setActivity(fetchedActivity);
+            } catch (err) {
+                console.error('Error fetching activity:', err);
+                setError('Failed to load activity. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchActivity();
+    }, [id]);
+
     // Load and unload audio
     useEffect(() => {
         let isMounted = true;
 
         const loadAudio = async () => {
+            if (!activity?.Musicpath) return;
+
             try {
                 const { sound: audioSound } = await Audio.Sound.createAsync(
-                    require('@/assets/audios/music.mp3'),
+                    { uri: activity.Musicpath }, // Use the Musicpath from your activity
                     { shouldPlay: false },
                     onPlaybackStatusUpdate
                 );
@@ -50,7 +79,7 @@ export default function App() {
                 sound.unloadAsync();
             }
         };
-    }, []);
+    }, [activity?.Musicpath]);
 
     const onPlaybackStatusUpdate = (status: any) => {
         if (status.isLoaded) {
@@ -98,6 +127,42 @@ export default function App() {
         return `${minutes}:${Number(seconds) < 10 ? '0' : ''}${seconds}`;
     };
 
+    if (loading && !activity) {
+        return (
+            <View style={[styles.container, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color="#04714A" />
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={[styles.container, styles.errorContainer]}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={() => router.back()}
+                >
+                    <Text style={styles.retryButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+    if (!activity) {
+        return (
+            <View style={[styles.container, styles.errorContainer]}>
+                <Text style={styles.errorText}>Activity not found</Text>
+                <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={() => router.back()}
+                >
+                    <Text style={styles.retryButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
@@ -116,12 +181,13 @@ export default function App() {
                 {/* Image */}
                 <View style={styles.imageContainer}>
                     <Image
-                        source={require('@/assets/images/image2.png')}
+                        source={{ uri: activity.imagepath[0] }}
                         style={styles.image}
+                        resizeMode="cover"
                     />
                     <View style={styles.imageOverlay}>
-                        <Text style={styles.imageTitle}>{data.name}</Text>
-                        <Text style={styles.imageSubtitle}>{data.description}</Text>
+                        <Text style={styles.imageTitle}>{activity.name}</Text>
+                        <Text style={styles.imageSubtitle}>{activity.description}</Text>
                     </View>
                 </View>
 
@@ -181,12 +247,32 @@ export default function App() {
                         </TouchableOpacity>
                     </View>
                 </View>
+
+                {/* Activity Details */}
+                <View style={styles.detailsContainer}>
+                    <Text style={styles.sectionTitle}>About This Activity</Text>
+                    <Text style={styles.descriptionText}>{activity.activityDescription}</Text>
+
+                    {activity.steps && activity.steps.length > 0 && (
+                        <>
+                            <Text style={styles.sectionTitle}>Steps</Text>
+                            {activity.steps.map((step: string, index: number) => (
+                                <View key={index} style={styles.stepContainer}>
+                                    <View style={styles.stepNumber}>
+                                        <Text style={styles.stepNumberText}>{index + 1}</Text>
+                                    </View>
+                                    <Text style={styles.stepText}>{step}</Text>
+                                </View>
+                            ))}
+                        </>
+                    )}
+                </View>
             </ScrollView>
 
             {/* Track Button */}
             <View style={styles.trackButtonContainer}>
                 <TouchableOpacity style={styles.trackButton}>
-                    <Text style={styles.trackButtonText}>Track my sleep</Text>
+                    <Text style={styles.trackButtonText}>Track my progress</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -315,5 +401,71 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: '600',
+    },
+
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
+        marginBottom: 20,
+        textAlign: 'center',
+    },
+    retryButton: {
+        backgroundColor: '#04714A',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 5,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    detailsContainer: {
+        padding: 20,
+        paddingBottom: 100, // Extra padding for the track button
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#04714A',
+        marginBottom: 10,
+    },
+    descriptionText: {
+        fontSize: 16,
+        lineHeight: 24,
+        color: '#333',
+        marginBottom: 20,
+    },
+    stepContainer: {
+        flexDirection: 'row',
+        marginBottom: 15,
+        alignItems: 'flex-start',
+    },
+    stepNumber: {
+        backgroundColor: '#04714A',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    stepNumberText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    stepText: {
+        flex: 1,
+        fontSize: 16,
+        lineHeight: 22,
+        color: '#333',
     },
 });
