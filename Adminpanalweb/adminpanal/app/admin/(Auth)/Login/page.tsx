@@ -99,7 +99,7 @@ const LoginPage = () => {
                 description: "You have successfully logged in",
             });
 
-            router.push("/");
+            router.push("/admin");
         } catch (error: any) {
             console.error("Login Error:", error);
 
