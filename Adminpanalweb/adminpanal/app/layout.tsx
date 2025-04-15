@@ -10,7 +10,9 @@ import { Toaster } from "@/components/ui/toaster"
 import Navbar from "@/components/Navbar";
 import Topbar from "@/components/Topbar";
 import ReduxProvider from "@/store/Provider";
-
+import { Toaster as Sonner } from "@/components/ui2/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster as Toaster2 } from "@/components/ui2/toaster";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -37,10 +39,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider>
-          <Topbar />
-          <Navbar />
-          {children}
-          <Toaster />
+          <TooltipProvider>
+            <Toaster2 />
+            <Sonner />
+            {children}
+            <Toaster />
+          </TooltipProvider>
         </ReduxProvider>
       </body>
     </html>
