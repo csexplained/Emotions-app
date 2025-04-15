@@ -8,10 +8,10 @@ export default function Home() {
                 <h1 className="text-2xl font-bold mb-6">Emotion App Management</h1>
                 <div className="flex justify-items-center gap-4">
 
-                    <Link href="/addactivity" className="px-6 w-full text-center py-3 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600">
+                    <Link href="/admin/addactivity" className="px-6 w-full text-center py-3 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600">
                         Add activity
                     </Link>
-                    <Link href="/allactivitys" className="px-6 w-full text-center py-3 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600">
+                    <Link href="/admin/allactivitys" className="px-6 w-full text-center py-3 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600">
                         All activitys
                     </Link>
 

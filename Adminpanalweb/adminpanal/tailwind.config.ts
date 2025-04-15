@@ -26,6 +26,16 @@ export default {
   				foreground: 'hsl(var(--popover-foreground))'
   			},
   			primary: {
+				50: "hsl(156 94% 95%)",
+				100: "hsl(156 94% 90%)",
+				200: "hsl(156 94% 80%)",
+				300: "hsl(156 94% 70%)",
+				400: "hsl(156 94% 60%)",
+				500: "hsl(156 94% 50%)",
+				600: "hsl(156 94% 40%)",
+				700: "hsl(156 94% 30%)",
+				800: "hsl(156 94% 20%)",
+				900: "hsl(156 94% 10%)",
   				DEFAULT: 'hsl(var(--primary))',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
