@@ -17,8 +17,7 @@ import Feather from '@expo/vector-icons/Feather';
 import ActivityService from '@/lib/activity';
 import { ActivityType } from '@/types/activitycard.types';
 
-// Define the type for steps if not already defined
-type StepType = string; // Adjust this type based on your actual data structure
+type StepType = string;
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,6 +30,13 @@ export default function ActivityDetailScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [images, setImages] = useState<string[]>([]);
+
+    // Timer states
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
+    const [isRunning, setIsRunning] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(0);
+    const [totalDuration, setTotalDuration] = useState(0);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         const fetchActivity = async () => {
@@ -45,7 +51,6 @@ export default function ActivityDetailScreen() {
                 const fetchedActivity = await ActivityService.getActivityById(id);
                 setActivity(fetchedActivity);
 
-                // Set images from the activity data or use defaults
                 if (fetchedActivity.imagepath) {
                     setImages(fetchedActivity.imagepath);
                 } else {
@@ -53,6 +58,21 @@ export default function ActivityDetailScreen() {
                         require('@/assets/images/image.png'),
                         require('@/assets/images/brain.png')
                     ]);
+                }
+
+                // Calculate step duration if time is provided
+                if (fetchedActivity.time) {
+                    const timeMatch = fetchedActivity.time.match(/(\d+)\s*min/);
+                    if (timeMatch) {
+                        const totalMinutes = parseInt(timeMatch[1]);
+                        setTotalDuration(totalMinutes * 60);
+
+                        // Calculate time per step if steps exist
+                        if (fetchedActivity.steps?.length) {
+                            const stepDuration = Math.floor((totalMinutes * 60) / fetchedActivity.steps.length);
+                            setTimeLeft(stepDuration);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching activity:', err);
@@ -63,7 +83,112 @@ export default function ActivityDetailScreen() {
         };
 
         fetchActivity();
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
     }, [id]);
+
+    useEffect(() => {
+        if (isRunning) {
+            timerRef.current = setInterval(() => {
+                setTimeLeft(prev => {
+                    if (prev <= 1) {
+                        goToNextStep();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
+    }, [isRunning]);
+
+    const goToNextStep = () => {
+        if (!activity?.steps) return;
+
+        setCurrentStepIndex(prev => {
+            const nextIndex = prev + 1;
+            if (nextIndex >= activity.steps!.length) {
+                setIsRunning(false);
+                return prev;
+            }
+
+            // Scroll to next image if available
+            if (images.length > nextIndex && scrollViewRef.current) {
+                scrollViewRef.current.scrollTo({
+                    x: width * nextIndex,
+                    animated: true
+                });
+            }
+
+            // Reset timer for next step
+            const stepDuration = Math.floor(totalDuration / activity.steps!.length);
+            setTimeLeft(stepDuration);
+
+            return nextIndex;
+        });
+    };
+
+    const goToPreviousStep = () => {
+        if (!activity?.steps || currentStepIndex <= 0) return;
+
+        setCurrentStepIndex(prev => {
+            const prevIndex = prev - 1;
+
+            // Scroll to previous image if available
+            if (images.length > prevIndex && scrollViewRef.current) {
+                scrollViewRef.current.scrollTo({
+                    x: width * prevIndex,
+                    animated: true
+                });
+            }
+
+            // Reset timer for previous step
+            const stepDuration = Math.floor(totalDuration / activity.steps!.length);
+            setTimeLeft(stepDuration);
+
+            return prevIndex;
+        });
+    };
+
+    const toggleTimer = () => {
+        setIsRunning(!isRunning);
+    };
+
+    const startActivity = () => {
+        if (!activity?.steps?.length) return;
+
+        setIsRunning(true);
+        setCurrentStepIndex(0);
+
+        // Calculate initial step duration
+        const stepDuration = Math.floor(totalDuration / activity.steps.length);
+        setTimeLeft(stepDuration);
+
+        // Scroll to first image if available
+        if (images.length > 0 && scrollViewRef.current) {
+            scrollViewRef.current.scrollTo({
+                x: 0,
+                animated: true
+            });
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
 
     const renderDotIndicators = () => {
         return (
@@ -130,6 +255,12 @@ export default function ActivityDetailScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
+                {/* Timer Display */}
+                {isRunning && (
+                    <View style={styles.timerContainer}>
+                        <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+                    </View>
+                )}
                 <TouchableOpacity style={styles.shareButton}>
                     <Feather name="send" size={20} color={"#ffffff"} />
                 </TouchableOpacity>
@@ -160,6 +291,8 @@ export default function ActivityDetailScreen() {
                 </ScrollView>
                 {renderDotIndicators()}
 
+
+
                 {/* Fixed Text Overlay */}
                 <View style={styles.textOverlay}>
                     <Text style={styles.name}>{activity.title}</Text>
@@ -177,13 +310,31 @@ export default function ActivityDetailScreen() {
                     {/* Section Title with Spacing */}
                     <View style={styles.topbox}>
                         <Text style={styles.sectionTitle}>Steps</Text>
-                        <Text style={styles.sectionTitle}>{activity.currentStep || 0}/{activity.totalSteps || 0}</Text>
+                        <Text style={styles.sectionTitle}>
+                            {currentStepIndex + 1}/{activity.totalSteps || activity.steps?.length || 0}
+                        </Text>
                     </View>
-
+                    {/* Current Step Highlight */}
+                    {isRunning && activity.steps && (
+                        <View style={styles.currentStepContainer}>
+                            <Text style={styles.currentStepTitle}>Current Step</Text>
+                            <View style={styles.currentStepContent}>
+                                <View style={styles.stepNumber}>
+                                    <Text style={styles.stepNumberText}>{currentStepIndex + 1}</Text>
+                                </View>
+                                <Text style={styles.currentStepText}>
+                                    {activity.steps[currentStepIndex]}
+                                </Text>
+                            </View>
+                        </View>
+                    )}
                     {/* Exercise Header with Image */}
                     <View style={styles.exerciseHeader}>
                         {activity.imagepath ? (
-                            <Image source={{ uri: Array.isArray(activity.imagepath) ? activity.imagepath[0] : activity.imagepath }} style={styles.exerciseImage} />
+                            <Image
+                                source={{ uri: Array.isArray(activity.imagepath) ? activity.imagepath[0] : activity.imagepath }}
+                                style={styles.exerciseImage}
+                            />
                         ) : (
                             <Image source={require('@/assets/images/brain.png')} style={styles.exerciseImage} />
                         )}
@@ -220,13 +371,24 @@ export default function ActivityDetailScreen() {
                         <Text style={styles.descriptionText}>{activity.activityDescription}</Text>
                     )}
 
+
+
                     {/* Steps section */}
                     <View style={styles.stepsSection}>
-                        <Text style={styles.stepsTitle}>Steps</Text>
+                        <Text style={styles.stepsTitle}>All Steps</Text>
                         <View style={styles.stepsContainer}>
                             {activity.steps?.map((step, index) => (
-                                <View key={index} style={styles.stepItem}>
-                                    <View style={styles.stepNumber}>
+                                <View
+                                    key={index}
+                                    style={[
+                                        styles.stepItem,
+                                        index === currentStepIndex && isRunning && styles.activeStepItem
+                                    ]}
+                                >
+                                    <View style={[
+                                        styles.stepNumber,
+                                        index === currentStepIndex && isRunning && styles.activeStepNumber
+                                    ]}>
                                         <Text style={styles.stepNumberText}>{index + 1}</Text>
                                     </View>
                                     <Text style={styles.stepText}>{step}</Text>
@@ -236,13 +398,45 @@ export default function ActivityDetailScreen() {
                     </View>
                 </ScrollView>
 
-                {/* Continue Button */}
+                {/* Control Buttons */}
                 <View style={styles.buttonWrapper}>
-                    <TouchableOpacity style={styles.continueButton}>
-                        <Text style={styles.continueButtonText}>
-                            {activity.activitytype === 'Read' ? 'Mark as Complete' : 'Continue'}
-                        </Text>
-                    </TouchableOpacity>
+                    {isRunning ? (
+                        <View style={styles.controlButtonsContainer}>
+                            <TouchableOpacity
+                                style={[styles.controlButton, styles.secondaryButton]}
+                                onPress={goToPreviousStep}
+                                disabled={currentStepIndex === 0}
+                            >
+                                <Text style={styles.controlButtonText}>Previous</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.controlButton, styles.primaryButton]}
+                                onPress={toggleTimer}
+                            >
+                                <Text style={styles.controlButtonText}>
+                                    {isRunning ? 'Pause' : 'Resume'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.controlButton, styles.secondaryButton]}
+                                onPress={goToNextStep}
+                                disabled={!activity.steps || currentStepIndex >= activity.steps.length - 1}
+                            >
+                                <Text style={styles.controlButtonText}>Next</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={styles.continueButton}
+                            onPress={startActivity}
+                        >
+                            <Text style={styles.continueButtonText}>
+                                {activity.activitytype === 'Read' ? 'Mark as Complete' : 'Start Activity'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
         </View>
@@ -320,11 +514,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 5,
         alignSelf: 'center',
-        width: '100%', // Ensure it spans full width
-        justifyContent: 'center', // Center dots evenly
+        width: '100%',
+        justifyContent: 'center',
     },
     dot: {
-        flex: 1, // Make each dot take equal width
+        flex: 1,
         height: 8,
         backgroundColor: 'white',
         marginHorizontal: 4,
@@ -363,7 +557,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         marginBottom: 5,
-
     },
     exerciseHeader: {
         flexDirection: 'row',
@@ -442,6 +635,11 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         alignItems: 'flex-start',
     },
+    activeStepItem: {
+        backgroundColor: '#E7FFFB',
+        borderRadius: 10,
+        padding: 10,
+    },
     stepNumber: {
         width: 24,
         height: 24,
@@ -450,6 +648,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
+    },
+    activeStepNumber: {
+        backgroundColor: '#034732',
     },
     stepNumberText: {
         color: 'white',
@@ -461,6 +662,28 @@ const styles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 22,
         color: '#555',
+    },
+    currentStepContainer: {
+        backgroundColor: '#E9FFFB',
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: 20,
+    },
+    currentStepTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#04714A',
+        marginBottom: 10,
+    },
+    currentStepContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    currentStepText: {
+        flex: 1,
+        fontSize: 16,
+        lineHeight: 22,
+        color: '#333',
     },
     buttonWrapper: {
         position: 'absolute',
@@ -483,6 +706,45 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 18,
         fontWeight: '600',
+    },
+    controlButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    controlButton: {
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        flex: 1,
+        marginHorizontal: 5,
+    },
+    primaryButton: {
+        backgroundColor: '#04714A',
+        shadowColor: '#04714A',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    secondaryButton: {
+        backgroundColor: '#E7FFFB',
+        borderWidth: 1,
+        borderColor: '#04714A',
+    },
+    controlButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    timerContainer: {
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+    },
+    timerText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
     loadingContainer: {
         justifyContent: 'center',
@@ -509,5 +771,4 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
-
 });

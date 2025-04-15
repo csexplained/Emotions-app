@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import '@/global.css';
 import { View, Text } from 'react-native';
 import { ErrorBoundary } from 'react-error-boundary';
-import LoadingScreen from '@/components/Loading';
+import LoadingScreen from '@/components/loading';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
