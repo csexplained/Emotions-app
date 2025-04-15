@@ -269,12 +269,13 @@ export default function ActivityDetailScreen() {
                 </View>
             </ScrollView>
 
-            {/* Track Button */}
+            {/*
             <View style={styles.trackButtonContainer}>
                 <TouchableOpacity style={styles.trackButton}>
                     <Text style={styles.trackButtonText}>Track my progress</Text>
                 </TouchableOpacity>
             </View>
+          */}
         </View>
     );
 }
