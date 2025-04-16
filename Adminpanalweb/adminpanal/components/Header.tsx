@@ -28,11 +28,11 @@ const Header = () => {
           <Link href="#how-it-works" className="text-foreground hover:text-primary transition-colors duration-300">How It Works</Link>
           <Link href="#categories" className="text-foreground hover:text-primary transition-colors duration-300">Activities</Link>
           <Link href="#testimonials" className="text-foreground hover:text-primary transition-colors duration-300">Testimonials</Link>
-          <Button className="btn-primary">Download</Button>
+          <a href='https://drive.google.com/file/d/1MKH61yT0EoIWlT_CpYWAMLtJD5XfXbNo/view?usp=sharing' target="_blank" className="btn-primary">Download</a>
         </nav>
 
         {/* Mobile Menu Button */}
-        <button 
+        <button
           className="md:hidden text-primary"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label="Toggle menu"
@@ -45,35 +45,35 @@ const Header = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-full left-0 right-0 bg-minty shadow-md py-4 px-6">
           <nav className="flex flex-col gap-4">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-foreground hover:text-primary transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </Link>
-            <Link 
-              href="#how-it-works" 
+            <Link
+              href="#how-it-works"
               className="text-foreground hover:text-primary transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               How It Works
             </Link>
-            <Link 
-              href="/categories" 
+            <Link
+              href="/categories"
               className="text-foreground hover:text-primary transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Activities
             </Link>
-            <Link 
-              href="/testimonials" 
+            <Link
+              href="/testimonials"
               className="text-foreground hover:text-primary transition-colors duration-300"
               onClick={() => setIsMenuOpen(false)}
             >
               Testimonials
             </Link>
-            <Button 
+            <Button
               className="btn-primary w-full"
               onClick={() => setIsMenuOpen(false)}
             >
