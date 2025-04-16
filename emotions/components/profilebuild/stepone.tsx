@@ -63,7 +63,7 @@ export default function Stepone({
             setLocalError("Please select your gender.");
             return;
         }
-        if (!authData.phone.trim()) {
+        if (!userdata.phone.trim()) {
             setLocalError("Phone number is required.");
             return;
         }
@@ -171,8 +171,10 @@ export default function Stepone({
                         <TextInput
                             placeholder="Your Mobile Number"
                             keyboardType="phone-pad"
-                            value={authData.phone}
-                            onChangeText={(text) => setauthData({ ...authData, phone: text })}
+                            value={userdata.phone}
+                            onChangeText={(text) => {
+                                setUserData({ ...userdata, phone: text });
+                            }}
                             style={styles.textInput}
                         />
                     </View>

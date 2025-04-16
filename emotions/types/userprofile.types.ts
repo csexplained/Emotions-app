@@ -5,4 +5,5 @@ export default interface Userprofile {
     gender: string,
     city: string,
     country: string,
+    phone: string,
 }
