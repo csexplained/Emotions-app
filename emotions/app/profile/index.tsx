@@ -21,7 +21,6 @@ export default function Indexscreen() {
     const userprofile = useAuthStore(state => state.userProfile);
     const setuserprofile = useAuthStore(state => state.setuserProfile);
     const [authData, setauthData] = useState<Authdata>({
-        phone: user?.phone || "",
         email: user?.email || "",
     });
 
@@ -32,6 +31,7 @@ export default function Indexscreen() {
         gender: userprofile?.gender || "",
         city: userprofile?.city || "",
         country: userprofile?.country || "",
+        phone: userprofile?.phone || "",
     });
     const [aboutyou, setAboutYou] = useState<AboutYou>({
         "Have you ever worked on your mental health?": "",
@@ -63,8 +63,8 @@ export default function Indexscreen() {
         try {
             // Create or update user profile
             await UserProfileService.ensureUserProfileExists(userdata);
-            await 
-            setuserprofile(userdata)
+            await
+                setuserprofile(userdata)
             setStep(prev => prev + 1);
         } catch (error) {
             console.error("Profile creation failed:", error);

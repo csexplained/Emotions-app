@@ -19,7 +19,6 @@ export default function Indexscreen() {
   const setuserprofile = useAuthStore(state => state.setuserProfile);
 
   const [authData, setauthData] = useState<Authdata>({
-    phone: user?.phone || "",
     email: user?.email || "",
   });
 
@@ -30,6 +29,7 @@ export default function Indexscreen() {
     gender: userprofile?.gender || "",
     city: userprofile?.city || "",
     country: userprofile?.country || "",
+    phone: userprofile?.phone || "",
   });
 
   const [aboutyou, setAboutYou] = useState<AboutYou>({
@@ -65,7 +65,7 @@ export default function Indexscreen() {
       if (userdata.gender) updates.gender = userdata.gender;
       if (userdata.city) updates.city = userdata.city;
       if (userdata.country) updates.country = userdata.country;
-
+      if (userdata.phone) updates.phone = userdata.phone;
       // Call Appwrite service
       const updatedProfile = await UserProfileService.updateUserProfile(userdata.userId, updates);
 
@@ -78,6 +78,7 @@ export default function Indexscreen() {
         gender: userdata.gender || "",
         city: userdata.city || "",
         country: userdata.country || "",
+        phone: userdata.phone || "",
       });
 
       // Optional: Show success message or navigate

@@ -243,10 +243,10 @@ export default function Stepone({ userdata, authData, onSubmit, loading, error, 
                         <TextInput
                             placeholder="Your Mobile Number"
                             keyboardType="phone-pad"
-                            value={authData.phone}
+                            value={userdata.phone}
                             editable={false}
                             onChangeText={(text) =>
-                                setauthData({ ...authData, phone: text })
+                                setUserData({ ...userdata, phone: text })
                             }
                             style={styles.textInput}
                         />
