@@ -11,7 +11,7 @@ const Hero = () => {
       {/* Background Elements */}
       <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-primary-100 opacity-50 blur-3xl"></div>
       <div className="absolute top-1/2 -left-24 w-64 h-64 rounded-full bg-emotion-happiness opacity-20 blur-3xl"></div>
-      
+
       <div className="container-custom relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Content */}
@@ -22,18 +22,20 @@ const Hero = () => {
             <p className="text-lg md:text-xl text-gray-700">
               Emotions is your personal AI wellness companion that understands how you feel and suggests personalized activities to restore balance.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button className="btn-primary gap-2">
-                <Download size={20} />
-                Download App
+                <a href='https://drive.google.com/file/d/1MKH61yT0EoIWlT_CpYWAMLtJD5XfXbNo/view?usp=sharing' target="_blank" className='flex justify-items-center gap-2'>
+                  <Download size={20} />
+                  Download App
+                </a>
               </Button>
               <Button className="btn-secondary gap-2">
                 Learn More
                 <ChevronRight size={20} />
               </Button>
             </div>
-            
+
             <div className="pt-4">
               <p className="text-gray-500 text-sm flex items-center gap-2">
                 <span className="flex gap-1">
@@ -46,15 +48,15 @@ const Hero = () => {
               </p>
             </div>
           </div>
-          
+
           {/* App Mockup */}
           <div className="relative">
             <div className="relative z-10 mx-auto max-w-xs lg:max-w-sm animate-float">
-              <Image 
-                src={mockup} 
+              <Image
+                src={mockup}
                 width={300}
-                height={100} 
-                alt="Emotions App Interface" 
+                height={100}
+                alt="Emotions App Interface"
                 className="rounded-3xl shadow-medium"
               />
             </div>
