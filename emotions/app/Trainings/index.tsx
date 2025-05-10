@@ -106,7 +106,7 @@ export default function Indexscreen() {
         <View style={styles.backButton2} />
       </View>
 
-      {/* Search Bar */}
+      {/* Search Bar
       <View style={styles.header}>
         <View style={styles.inputContainer}>
           <TextInput
@@ -129,6 +129,8 @@ export default function Indexscreen() {
           </Pressable>
         </View>
       </View>
+      */}
+
 
       {/* Scrollable Content */}
       <ScrollView
@@ -151,9 +153,15 @@ export default function Indexscreen() {
       >
         {activities.map(activity => (
           <ActivityCard
-            key={activity.$id}
             id={activity.$id}
-            {...activity}
+            redirect={`Trainings/${activity.redirect}?id=${activity.$id}`}
+            key={activity.$id}
+            title={activity.title}
+            description={activity.description}
+            tags={activity.tags}
+            duration={activity.duration}
+            image={activity.image}
+            colors={activity.colors}
           />
         ))}
 

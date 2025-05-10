@@ -4,15 +4,14 @@ import {
     Text,
     Pressable,
     Image,
-    ScrollView,
+    FlatList,
     TextInput,
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
     Animated,
-    ActivityIndicator
+    ActivityIndicator,
+    Keyboard
 } from "react-native";
 import { Ionicons, Entypo } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
@@ -38,14 +37,13 @@ const ChatScreen = () => {
 
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState("");
-    const scrollViewRef = useRef<ScrollView>(null);
+    const scrollViewRef = useRef<FlatList>(null);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     const userProfileImage = require('@/assets/images/chatlogo.png');
     const aiProfileImage = require('@/assets/images/chatlogo.png');
 
-    // Generate unique IDs for messages
     const generateId = () => Math.random().toString(36).substr(2, 9);
 
     useEffect(() => {
@@ -78,10 +76,12 @@ const ChatScreen = () => {
     }, [fadeAnim]);
 
     const scrollToBottom = useCallback(() => {
-        if (scrollViewRef.current) {
-            scrollViewRef.current.scrollToEnd({ animated: true });
+        if (scrollViewRef.current && messages.length > 0) {
+            requestAnimationFrame(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            });
         }
-    }, []);
+    }, [messages]);
 
     const handleSend = async () => {
         if (newMessage.trim() && mode.length > 0) {
@@ -95,7 +95,6 @@ const ChatScreen = () => {
             setMessages(prev => [...prev, userMsg]);
             setNewMessage("");
 
-            // Add loading message
             const loadingMsg = {
                 id: generateId(),
                 text: "",
@@ -105,13 +104,9 @@ const ChatScreen = () => {
             };
             setMessages(prev => [...prev, loadingMsg]);
 
-            scrollToBottom();
-
-            // Get AI Response
             try {
                 const aiReplyText = await getOpenAIResponse(newMessage, mode);
 
-                // Remove loading message and add actual response
                 setMessages(prev => [
                     ...prev.filter(msg => msg.id !== loadingMsg.id),
                     {
@@ -120,11 +115,8 @@ const ChatScreen = () => {
                         isLoading: false
                     }
                 ]);
-
-                scrollToBottom();
             } catch (error) {
                 console.error("Error getting AI response:", error);
-                // Replace loading message with error message
                 setMessages(prev => [
                     ...prev.filter(msg => msg.id !== loadingMsg.id),
                     {
@@ -133,6 +125,7 @@ const ChatScreen = () => {
                         isLoading: false
                     }
                 ]);
+            } finally {
                 scrollToBottom();
             }
         }
@@ -163,19 +156,16 @@ const ChatScreen = () => {
         }
     };
 
-
-
-    // Optimized message rendering
-    const renderMessage = useCallback((message: Message) => (
+    const renderMessage = useCallback(({ item }: { item: Message }) => (
         <Animated.View
-            key={message.id}
+            key={item.id}
             style={[
                 styles.messageWrapper,
-                message.isMe ? styles.myMessageWrapper : styles.otherMessageWrapper,
+                item.isMe ? styles.myMessageWrapper : styles.otherMessageWrapper,
                 { opacity: fadeAnim }
             ]}
         >
-            {!message.isMe && (
+            {!item.isMe && (
                 <Image
                     source={aiProfileImage}
                     style={styles.profileImage}
@@ -184,33 +174,33 @@ const ChatScreen = () => {
             <View
                 style={[
                     styles.messageContainer,
-                    message.isMe ? styles.myMessage : styles.otherMessage,
-                    message.isLoading && styles.loadingMessage
+                    item.isMe ? styles.myMessage : styles.otherMessage,
+                    item.isLoading && styles.loadingMessage
                 ]}
             >
-                {message.image ? (
+                {item.image ? (
                     <Image
-                        source={{ uri: message.image }}
+                        source={{ uri: item.image }}
                         style={styles.messageImage}
                         resizeMode="cover"
                     />
-                ) : message.isLoading ? (
+                ) : item.isLoading ? (
                     <ActivityIndicator size="small" color="#04714A" />
                 ) : (
-                    <Text style={message.isMe ? styles.myMessageText : styles.otherMessageText}>
-                        {message.text}
+                    <Text style={item.isMe ? styles.myMessageText : styles.otherMessageText}>
+                        {item.text}
                     </Text>
                 )}
-                {!message.isLoading && (
+                {!item.isLoading && (
                     <Text style={[
                         styles.messageTime,
-                        message.isMe ? styles.myMessageTime : styles.otherMessageTime
+                        item.isMe ? styles.myMessageTime : styles.otherMessageTime
                     ]}>
-                        {message.time}
+                        {item.time}
                     </Text>
                 )}
             </View>
-            {message.isMe && (
+            {item.isMe && (
                 <Image
                     source={userProfileImage}
                     style={styles.profileImage}
@@ -220,103 +210,107 @@ const ChatScreen = () => {
     ), []);
 
     return (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-            >
-                {/* Header */}
-                <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-                    <View style={styles.headerLeft}>
-                        <Image
-                            source={aiProfileImage}
-                            style={styles.logo}
-                        />
-                        <View style={styles.headerText}>
-                            <Text style={styles.headerTitle}>Emotions <Text style={styles.aiText}>AI</Text></Text>
-                            <Text style={styles.statusText}>Online</Text>
-                        </View>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+        >
+            {/* Header */}
+            <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+                <View style={styles.headerLeft}>
+                    <Image
+                        source={aiProfileImage}
+                        style={styles.logo}
+                    />
+                    <View style={styles.headerText}>
+                        <Text style={styles.headerTitle}>Emotions <Text style={styles.aiText}>AI</Text></Text>
+                        <Text style={styles.statusText}>Online</Text>
                     </View>
-                    <Pressable style={styles.menuButton}>
-                        <Entypo name="dots-three-vertical" size={20} color="#04714A" />
-                    </Pressable>
-                </Animated.View>
+                </View>
+            </Animated.View>
 
-                {/* Chat Messages */}
-                <ScrollView
+            {/* Chat Messages */}
+            <Pressable
+                style={styles.messagesContainer}
+                onPress={Keyboard.dismiss}
+            >
+                <FlatList
                     ref={scrollViewRef}
+                    data={messages}
+                    renderItem={renderMessage}
+                    keyExtractor={(item) => item.id}
                     style={styles.chatContainer}
                     contentContainerStyle={styles.chatContent}
                     showsVerticalScrollIndicator={false}
                     onContentSizeChange={scrollToBottom}
-                    scrollEventThrottle={8} // Reduced for smoother scrolling
+                    onLayout={scrollToBottom}
                     keyboardShouldPersistTaps="handled"
-                    removeClippedSubviews={Platform.OS === 'android'} // Helps with Android performance
-                    overScrollMode="never" // Disables the glow effect on Android
-                >
-                    {mode === "" && <Modeselector selectedmode={mode} setmode={setMode} modes={modes} />}
-                    {mode.length > 0 && messages.map(renderMessage)}
-                </ScrollView>
+                    removeClippedSubviews={Platform.OS === 'android'}
+                    ListHeaderComponent={mode === "" ? <Modeselector selectedmode={mode} setmode={setMode} modes={modes} /> : null}
+                    overScrollMode="always"
+                    bounces={true}
+                    alwaysBounceVertical={true}
+                    nestedScrollEnabled={true}
+                />
+            </Pressable>
 
-                {/* Input Area */}
-                <Animated.View
-                    style={[
-                        styles.inputContainer,
-                        isKeyboardVisible && styles.inputContainerKeyboardActive,
-                        { opacity: fadeAnim }
-                    ]}
+            {/* Input Area */}
+            <Animated.View
+                style={[
+                    styles.inputContainer,
+                    isKeyboardVisible && styles.inputContainerKeyboardActive,
+                    { opacity: fadeAnim }
+                ]}
+            >
+                <Pressable
+                    style={styles.cameraButton}
+                    onPress={openCamera}
+                    android_ripple={{ color: '#333', borderless: true }}
                 >
-                    <Pressable
-                        style={styles.cameraButton}
-                        onPress={openCamera}
-                        android_ripple={{ color: '#333', borderless: true }}
-                    >
-                        <Ionicons name="camera-outline" size={24} color="#ffffff" />
-                    </Pressable>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Ask me anything.."
-                        placeholderTextColor="#999"
-                        value={newMessage}
-                        onChangeText={setNewMessage}
-                        multiline
-                        onSubmitEditing={handleSend}
-                        blurOnSubmit={false}
+                    <Ionicons name="camera-outline" size={24} color="#ffffff" />
+                </Pressable>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Ask me anything.."
+                    placeholderTextColor="#999"
+                    value={newMessage}
+                    onChangeText={setNewMessage}
+                    multiline
+                    onSubmitEditing={handleSend}
+                    blurOnSubmit={false}
+                />
+                <Pressable
+                    style={({ pressed }) => [
+                        styles.sendButton,
+                        pressed && styles.sendButtonPressed,
+                        (!newMessage.trim() || !mode) && styles.sendButtonDisabled
+                    ]}
+                    onPress={handleSend}
+                    disabled={!newMessage.trim() || !mode}
+                >
+                    <Feather
+                        name="send"
+                        size={24}
+                        color={newMessage.trim() && mode ? "#000000" : "#000000"}
                     />
+                </Pressable>
+            </Animated.View>
+
+            {/* Floating Action Button */}
+            {!isKeyboardVisible && (
+                <Animated.View style={[styles.fab, { opacity: fadeAnim }]}>
                     <Pressable
+                        onPress={openCamera}
                         style={({ pressed }) => [
-                            styles.sendButton,
-                            pressed && styles.sendButtonPressed,
-                            (!newMessage.trim() || !mode) && styles.sendButtonDisabled
+                            styles.fabButton,
+                            pressed && styles.fabPressed
                         ]}
-                        onPress={handleSend}
-                        disabled={!newMessage.trim() || !mode}
                     >
-                        <Feather
-                            name="send"
-                            size={24}
-                            color={newMessage.trim() && mode ? "#000000" : "#000000"}
-                        />
+                        <Ionicons name="add" size={28} color="white" />
                     </Pressable>
                 </Animated.View>
-
-                {/* Floating Action Button - Only show when keyboard is not visible */}
-                {!isKeyboardVisible && (
-                    <Animated.View style={[styles.fab, { opacity: fadeAnim }]}>
-                        <Pressable
-                            onPress={openCamera}
-                            style={({ pressed }) => [
-                                styles.fabButton,
-                                pressed && styles.fabPressed
-                            ]}
-                        >
-                            <Ionicons name="add" size={28} color="white" />
-                        </Pressable>
-                    </Animated.View>
-                )}
-            </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
+            )}
+        </KeyboardAvoidingView>
     );
 };
 
@@ -324,6 +318,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F0FFFA',
+    },
+    messagesContainer: {
+        flex: 1,
+        width: '100%',
     },
     header: {
         flexDirection: 'row',
@@ -378,21 +376,13 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#04714A',
     },
-    menuButton: {
-        borderRadius: 10,
-        backgroundColor: 'white',
-        padding: 10,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-    },
     chatContainer: {
-        height: "auto",
         flex: 1,
-        paddingHorizontal: 8,
     },
     chatContent: {
         paddingVertical: 16,
         paddingBottom: Platform.OS === 'ios' ? 100 : 80,
+        flexGrow: 1,
     },
     messageWrapper: {
         flexDirection: 'row',

@@ -119,12 +119,9 @@ export default function Indexscreen() {
             </View>
           </View>
         </View>
-        <Pressable style={styles.menuButton}>
-          <NotificationIcon />
-        </Pressable>
       </View>
 
-      {/* Search Bar */}
+      {/* Search Bar
       <View style={styles.header}>
         <View style={styles.inputContainer}>
           <TextInput
@@ -147,6 +144,9 @@ export default function Indexscreen() {
           </Pressable>
         </View>
       </View>
+
+      */}
+
 
       <Categories />
 
