@@ -97,9 +97,6 @@ export default function ActivityDetailScreen() {
                     <AntDesign name="arrowleft" size={24} color="white" />
                 </Pressable>
                 <Text style={[styles.title, { textAlign: 'center' }]}>{activity.title}</Text>
-                <TouchableOpacity style={styles.backButton}>
-                    <Feather name="send" size={20} color={"#ffffff"} />
-                </TouchableOpacity>
             </View>
 
             {/* Scrollable Content */}

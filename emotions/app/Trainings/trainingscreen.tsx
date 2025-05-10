@@ -261,9 +261,6 @@ export default function ActivityDetailScreen() {
                         <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
                     </View>
                 )}
-                <TouchableOpacity style={styles.shareButton}>
-                    <Feather name="send" size={20} color={"#ffffff"} />
-                </TouchableOpacity>
             </View>
 
             {/* Image Slider */}

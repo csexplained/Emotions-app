@@ -172,9 +172,6 @@ export default function ActivityDetailScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.shareButton}>
-                    <Feather name="send" size={20} color={"#ffffff"} />
-                </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.scrollContainer}>
