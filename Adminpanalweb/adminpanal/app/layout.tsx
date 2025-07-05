@@ -26,7 +26,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Emotions AI",
   description: "Your mental wellness companion",
-  icons : "https://res.cloudinary.com/dxae5w6hn/image/upload/v1744625275/azyl7octqwqctc1tipgb.png"
+  icons: "https://res.cloudinary.com/dxae5w6hn/image/upload/v1744625275/azyl7octqwqctc1tipgb.png"
 };
 
 export default function RootLayout({
@@ -37,12 +37,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="https://res.cloudinary.com/dxae5w6hn/image/upload/v1744625275/azyl7octqwqctc1tipgb.png" type="image/x-icon" />
         <link rel="shortcut icon" href="https://res.cloudinary.com/dxae5w6hn/image/upload/v1744625275/azyl7octqwqctc1tipgb.png" type="image/x-icon" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        
+
         <ReduxProvider>
           <TooltipProvider>
             <Toaster2 />

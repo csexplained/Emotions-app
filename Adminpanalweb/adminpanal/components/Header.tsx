@@ -28,7 +28,7 @@ const Header = () => {
           <Link href="#how-it-works" className="text-foreground hover:text-primary transition-colors duration-300">How It Works</Link>
           <Link href="#categories" className="text-foreground hover:text-primary transition-colors duration-300">Activities</Link>
           <Link href="#testimonials" className="text-foreground hover:text-primary transition-colors duration-300">Testimonials</Link>
-          <a href='https://drive.google.com/file/d/1MKH61yT0EoIWlT_CpYWAMLtJD5XfXbNo/view?usp=sharing' target="_blank" className="btn-primary">Download</a>
+          <a href='https://drive.google.com/file/d/1VMobZfLNIZAF6AhM1pFQ46zDIURvdX01/view?usp=sharing' target="_blank" className="btn-primary">Download</a>
         </nav>
 
         {/* Mobile Menu Button */}
