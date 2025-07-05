@@ -73,12 +73,7 @@ const Header = () => {
             >
               Testimonials
             </Link>
-            <Button
-              className="btn-primary w-full"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Download
-            </Button>
+            <a href='https://drive.google.com/file/d/1VMobZfLNIZAF6AhM1pFQ46zDIURvdX01/view?usp=sharing' target="_blank" className="btn-primary w-full">Download</a>
           </nav>
         </div>
       )}
