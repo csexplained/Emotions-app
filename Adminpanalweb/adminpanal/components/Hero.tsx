@@ -25,7 +25,7 @@ const Hero = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Button className="btn-primary gap-2">
-                <a href='https://drive.google.com/file/d/1MKH61yT0EoIWlT_CpYWAMLtJD5XfXbNo/view?usp=sharing' target="_blank" className='flex justify-items-center gap-2'>
+                <a href='https://drive.google.com/file/d/1VMobZfLNIZAF6AhM1pFQ46zDIURvdX01/view?usp=sharing' target="_blank" className='flex justify-items-center gap-2'>
                   <Download size={20} />
                   Download App
                 </a>

@@ -34,7 +34,7 @@ const Navbar = () => {
         description: "You have been successfully logged out",
       });
 
-      router.push('/Login');
+      router.push('/admin/Login');
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -50,7 +50,7 @@ const Navbar = () => {
       <div className="sticky top-0 w-full px-6 md:px-16 lg:px-16 h-[105px] flex justify-between items-center bg-white shadow-md z-50">
 
         {/* Logo */}
-        <Link href={"/dashboard"} className="flex items-center gap-4">
+        <Link href={"/admin/dashboard"} className="flex items-center gap-4">
           <Image
             src={"https://res.cloudinary.com/dxae5w6hn/image/upload/v1744625275/azyl7octqwqctc1tipgb.png"}
             width={80}

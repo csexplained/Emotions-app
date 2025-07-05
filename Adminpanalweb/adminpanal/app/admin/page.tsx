@@ -26,7 +26,7 @@ export default function Home() {
             try {
                 const user = await account.get();
                 dispatch(setUser(user));
-                router.push("/admin/dashboard"); // Redirect to dashboard if logged in
+                router.push("/adminboard"); // Redirect to dashboard if logged in
             } catch (error) {
                 console.log("No active session or session expired.");
                 dispatch(clearUser());
