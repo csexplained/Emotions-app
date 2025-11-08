@@ -1,25 +1,31 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 import { ActivityService } from '@/services/ActivityService';
-import type { ActivityStep, StepConfig } from '@/services/ActivityService';
 import { EmotionTypeService } from '@/services/EmotionTypeService';
+import type { ActivityStep, StepConfig, ActivityType } from '@/services/ActivityService';
 import type { EmotionType } from '@/services/EmotionTypeService';
 import axios from 'axios';
+
+// Icons
 import {
     ArrowLeft,
+    Save,
     Plus,
     Trash2,
     Upload,
     Music,
-    FileAudio
+    FileAudio,
+    Loader,
+    Palette
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
 
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
 
-const activityTypes = ["Read", "Music", "Exercise",];
+const activityTypes = ["Read", "Music", "Exercise"];
 const difficulties = ["Easy", "Medium", "Hard"];
 
 interface FormData {
@@ -44,15 +50,18 @@ interface FormData {
     popularity: number;
 }
 
-export default function AddActivityPage() {
+export default function EditActivityPage() {
+    const params = useParams();
     const router = useRouter();
-    const { toast } = useToast()
-
+    const { toast } = useToast();
     const [emotions, setEmotions] = useState<EmotionType[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
     const [uploadsInProgress, setUploadsInProgress] = useState(0);
+
+    const activityId = params.id as string;
 
     const [formData, setFormData] = useState<FormData>({
         name: "",
@@ -88,19 +97,52 @@ export default function AddActivityPage() {
         popularity: 0,
     });
 
-    // Fetch emotions on component mount
-    React.useEffect(() => {
-        const fetchEmotions = async () => {
-            try {
-                const emotionService = new EmotionTypeService();
-                const emotionData = await emotionService.getAllEmotions();
-                setEmotions(emotionData);
-            } catch (error) {
-                console.error('Error fetching emotions:', error);
-            }
-        };
-        fetchEmotions();
-    }, []);
+    useEffect(() => {
+        fetchData();
+    }, [activityId]);
+
+    const fetchData = async () => {
+        try {
+            const [activityData, emotionsData] = await Promise.all([
+                new ActivityService().getActivityWithParsedSteps(activityId),
+                new EmotionTypeService().getAllEmotions()
+            ]);
+
+            // Transform the activity data to match our form structure
+            setFormData({
+                name: activityData.name,
+                title: activityData.title,
+                type: activityData.type,
+                activitytype: activityData.activitytype,
+                difficulty: activityData.difficulty,
+                tags: activityData.tags,
+                description: activityData.description,
+                activityDescription: activityData.activityDescription,
+                imagepath: activityData.imagepath,
+                Musicpath: activityData.Musicpath,
+                colors: activityData.colors,
+                time: activityData.time || "",
+                duration: activityData.duration || "",
+                distance: activityData.distance || "",
+                exerciseName: activityData.exerciseName,
+                steps: activityData.parsedSteps,
+                stepConfig: activityData.parsedStepConfig,
+                isFeatured: activityData.isFeatured,
+                popularity: activityData.popularity,
+            });
+
+            setEmotions(emotionsData);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            toast({
+                title: "Error",
+                description: "Failed to load activity data. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -288,15 +330,6 @@ export default function AddActivityPage() {
         }));
     };
 
-    const getRedirectUrl = (activityType: string): string => {
-        switch (activityType) {
-            case "Music": return "/Musicplayer";
-            case "Read": return "/Readingscreen";
-            case "Exercise": return "/trainingscreen";
-            default: return "/activity";
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -309,56 +342,62 @@ export default function AddActivityPage() {
             return;
         }
 
-        setLoading(true);
+        setSaving(true);
         try {
             const activityService = new ActivityService();
 
-            const redirectUrl = getRedirectUrl(formData.activitytype);
-
-            await activityService.createActivity({
+            await activityService.updateActivity(activityId, {
                 ...formData,
-                redirect: redirectUrl, // This will now work with the updated type
                 totalSteps: formData.steps.length,
                 currentStep: 1,
             });
 
             toast({
-                title: "Activity Created Successfully!",
-                description: "Your activity has been added to the database.",
+                title: "Activity Updated Successfully!",
+                description: "Your changes have been saved.",
             });
 
             setTimeout(() => {
-                router.push("/admin/dashboard")
-            }, 2000);
+                router.push('/activities');
+            }, 1500);
 
         } catch (error) {
-            console.error("Upload error:", error);
+            console.error("Update error:", error);
             toast({
-                title: "Upload Failed",
-                description: "There was an error creating the activity. Please try again.",
+                title: "Update Failed",
+                description: "There was an error updating the activity. Please try again.",
                 variant: "destructive",
             });
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
 
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading activity data...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 p-6">
-
-
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-6">
                     <button
-                        onClick={() => router.push("/admin/dashboard")}
+                        onClick={() => router.push('/activities')}
                         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Activities
                     </button>
-                    <h1 className="text-3xl font-bold text-gray-900">Create New Activity</h1>
-                    <p className="text-gray-600 mt-2">Add a new mental wellness activity with steps and media</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Edit Activity</h1>
+                    <p className="text-gray-600 mt-2">Update your mental wellness activity</p>
                 </div>
 
                 {/* Progress Bars */}
@@ -385,7 +424,7 @@ export default function AddActivityPage() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Basic Information Section */}
+                    {/* Basic Information */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                         <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
 
@@ -584,6 +623,7 @@ export default function AddActivityPage() {
                                             value={color}
                                             onChange={(e) => handleColorChange(index, e.target.value)}
                                             className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                                            placeholder="#hexcolor"
                                         />
                                     </div>
                                 </div>
@@ -732,9 +772,9 @@ export default function AddActivityPage() {
 
                     {/* Media Upload Section */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Media Upload</h2>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Media</h2>
 
-                        {/* Image Gallery Upload */}
+                        {/* Image Gallery */}
                         <div className="mb-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Activity Images
@@ -850,21 +890,29 @@ export default function AddActivityPage() {
                     <div className="flex gap-4">
                         <button
                             type="button"
-                            onClick={() => router.push("/admin/dashboard")}
+                            onClick={() => router.push('/activities')}
                             className="flex-1 py-3 px-6 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            disabled={loading || uploading || uploadsInProgress > 0}
-                            className="flex-1 py-3 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                            disabled={saving || uploading || uploadsInProgress > 0}
+                            className="flex-1 py-3 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
                         >
-                            {loading
-                                ? "Creating Activity..."
-                                : uploading || uploadsInProgress > 0
-                                    ? "Uploading Files..."
-                                    : "Create Activity"}
+                            {saving ? (
+                                <>
+                                    <Loader className="h-4 w-4 animate-spin" />
+                                    Saving Changes...
+                                </>
+                            ) : uploading || uploadsInProgress > 0 ? (
+                                "Uploading Files..."
+                            ) : (
+                                <>
+                                    <Save className="h-4 w-4" />
+                                    Update Activity
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
