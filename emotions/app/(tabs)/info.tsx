@@ -1,242 +1,487 @@
-import React from "react";
-import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions } from "react-native";
-import AntDesign from "@expo/vector-icons/AntDesign";
-import { Redirect, router } from "expo-router";
-import Card from "@/components/Infotab/AngerCard";
-import Humanicon from "@/assets/icons/humanicon";
-import { NormalIcon, HappyIcon, AngerIcon, SadIcon } from '@/assets/icons/emotionemojis';
-import CardData from "@/types/Carddata.types";
-const cardsData: CardData[] = [
-    {
-        id: '906', // Happiness reading activity
-        icon: <HappyIcon height={32} />,
-        bgColor: "#FFFDE7",
-        type: "Calm",
-        iconBgColor: "#FFD600",
-        issueText: "Want More Joy?",
-        description: "Build joy through gratitude and purpose.",
+import React, { useState, useEffect } from 'react';
+import {
+    View,
+    Text,
+    ScrollView,
+    ActivityIndicator,
+    TouchableOpacity,
+    StyleSheet,
+    Dimensions,
+    Animated,
+    Platform
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Link, RelativePathString } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import EmotionService from '@/lib/emotion';
+import { EmotionType } from '@/types/category.types';
 
-    },
-    {
-        id: '901', // Anger reading activity
-        icon: <AngerIcon height={32} />,
-        bgColor: "#FFE7E7",
-        type: "Anger",
-        iconBgColor: "#FF4A4A",
-        issueText: "Feeling Angry?",
-        description: "Learn how to use anger constructively.",
+const { width, height } = Dimensions.get('window');
 
-    },
-    {
-        id: '903', // Blame reading activity
-        icon: <NormalIcon height={32} />,
-        bgColor: "#FFF4E7",
-        type: "Blame",
-        iconBgColor: "#FF9E00",
-        issueText: "Caught in Blame?",
-        description: "Shift blame into personal power.",
+const COLORS = {
+    primary: '#04714A',
+    primaryLight: '#E7FFF4',
+    background: '#F8FFFC',
+    textPrimary: '#1A1F2C',
+    textSecondary: '#64748B',
+    white: '#FFFFFF',
+    border: '#E5F5EF'
+};
 
-    },
-    {
-        id: '904', // Sorrow reading activity
-        icon: <SadIcon height={32} />,
-        bgColor: "#D9E6FF",
-        type: "Sorrow",
-        iconBgColor: "#6789FF",
-        issueText: "Feeling Low?",
-        description: "Explore how sorrow leads to healing.",
+const Categories = () => {
+    const [emotions, setEmotions] = useState<EmotionType[]>([]);
+    const [selected, setSelected] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const fadeAnim = new Animated.Value(0);
 
-    },
-    {
-        id: '905', // Confusion reading activity
-        icon: <Humanicon height={32} />,
-        bgColor: "#E7FFFB",
-        type: "Confusion",
-        iconBgColor: "#00C6AE",
-        issueText: "Mentally Foggy?",
-        description: "Turn confusion into clarity.",
+    useEffect(() => {
+        fetchEmotions();
+    }, []);
 
-    },
-    {
-        id: '906', // Happiness reading activity
-        icon: <HappyIcon height={32} />,
-        bgColor: "#FFFDE7",
-        type: "Happiness",
-        iconBgColor: "#FFD600",
-        issueText: "Want More Happiness?",
-        description: "Build Happiness through gratitude and purpose.",
-
-    }
-];
-
-
-export default function Indexscreen() {
-
-    // Function to chunk array into groups of 2 for 2-column layout
-    const chunkArray = (array: CardData[], chunkSize: number) => {
-        const result = [];
-        for (let i = 0; i < array.length; i += chunkSize) {
-            result.push(array.slice(i, i + chunkSize));
+    useEffect(() => {
+        if (!loading && emotions.length > 0) {
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 800,
+                useNativeDriver: true,
+            }).start();
         }
-        return result;
+    }, [loading, emotions]);
+
+    const fetchEmotions = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await EmotionService.getEmotions();
+            setEmotions(data);
+        } catch (err) {
+            console.log("Failed to fetch emotions:", err);
+            setError("Failed to load emotions. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const cardRows = chunkArray(cardsData, 2);
+    const getGradient = (color: string) => {
+        // Use the color from the emotion data and create a gradient
+        return [color, `${color}CC`];
+    };
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.loadingText}>Loading emotions...</Text>
+            </View>
+        );
+    }
+
+    if (error && emotions.length === 0) {
+        return (
+            <View style={styles.errorContainer}>
+                <Ionicons name="sad-outline" size={48} color={COLORS.textSecondary} />
+                <Text style={styles.errorTitle}>Unable to Load</Text>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity style={styles.retryButton} onPress={fetchEmotions}>
+                    <Text style={styles.retryButtonText}>Try Again</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={{ flex: 1, backgroundColor: "#F0FFFA" }}
-        >
-
-            {/* Sticky Header */}
+        <View style={styles.container}>
+            {/* Header Section */}
             <View style={styles.header}>
-                <Pressable onPress={() => router.back()} style={styles.backButton}>
-                    <AntDesign name="arrowleft" size={24} color="black" />
-                </Pressable>
-                <Text style={[styles.title, { textAlign: 'center' }]}>Information</Text>
-                {/* Add an empty view to balance the flex layout */}
-                <View style={styles.backButton2} />
+                <View style={styles.headerContent}>
+                    <Text style={styles.title}>How are you feeling today?</Text>
+                    <Text style={styles.subtitle}>
+                        Choose an emotion to explore guided activities and resources
+                    </Text>
+                </View>
+
+                {error && (
+                    <View style={styles.errorBanner}>
+                        <Ionicons name="warning-outline" size={16} color="#DC2626" />
+                        <Text style={styles.errorBannerText}>{error}</Text>
+                    </View>
+                )}
             </View>
 
-            {/* Scrollable Content */}
-            <ScrollView
-                contentContainerStyle={styles.scrollContainer}
+            {/* Main Content - Vertical List Layout */}
+            <Animated.ScrollView
+                style={[styles.scrollContainer, { opacity: fadeAnim }]}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.circleContainer}>
-                    <View style={styles.circleOuter}>
-                        <View style={styles.circleMiddle} />
-                        <View style={styles.circleInner} />
-                        <View style={styles.imageContainer}>
-                            <Image
-                                source={require("@/assets/images/brain.png")}
-                                style={styles.brainImage}
-                            />
+                {/* Hero Illustration */}
+                <View style={styles.heroSection}>
+                    <View style={styles.illustrationContainer}>
+                        <View style={styles.circleOuter}>
+                            <View style={styles.circleMiddle} />
+                            <View style={styles.circleInner} />
+                            <View style={styles.brainContainer}>
+                                <Ionicons name="heart" size={40} color={COLORS.primary} />
+                            </View>
                         </View>
                     </View>
                 </View>
 
-                {/* Cards Grid - 2 per row */}
-                <View style={styles.cardsGrid}>
-                    {cardRows.map((row, rowIndex) => (
-                        <View key={`row-${rowIndex}`} style={styles.cardRow}>
-                            {row.map((card) => (
-                                <Card
-                                    type={card.type}
-                                    key={card.id}
-                                    icon={card.icon}
-                                    bgColor={card.bgColor}
-                                    iconBgColor={card.iconBgColor}
-                                    issueText={card.issueText}
-                                    description={card.description}
-                                />
-                            ))}
-                            {/* Add empty view if odd number of cards */}
-                            {row.length < 2 && <View style={styles.emptyCard} />}
-                        </View>
-                    ))}
+                {/* Emotions List */}
+                <View style={styles.listSection}>
+                    <Text style={styles.listTitle}>Emotion Categories</Text>
+                    <Text style={styles.listSubtitle}>
+                        Tap on any emotion to explore activities and resources
+                    </Text>
+
+                    <View style={styles.cardsList}>
+                        {emotions.map((emotion) => {
+                            const colors = getGradient(emotion.color);
+                            const isActive = selected === emotion.$id;
+
+                            return (
+                                <Link
+                                    key={emotion.$id}
+                                    href={`/Activitys/${emotion.name}` as RelativePathString}
+                                    asChild
+                                >
+                                    <TouchableOpacity
+                                        style={[styles.cardContainer, isActive && styles.cardActive]}
+                                        onPress={() => {
+                                            setSelected(emotion.$id);
+                                            setTimeout(() => setSelected(null), 600);
+                                        }}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={styles.cardContent}>
+                                            {/* Icon and Gradient */}
+                                            <LinearGradient
+                                                colors={colors as [string, string]}
+                                                style={styles.gradient}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 1 }}
+                                            >
+                                                <View style={styles.iconContainer}>
+                                                    <Text style={styles.icon}>{emotion.icon}</Text>
+                                                </View>
+
+                                                {/* Active State Overlay */}
+                                                {isActive && (
+                                                    <View style={styles.activeOverlay}>
+                                                        <Ionicons name="checkmark-circle" size={24} color="white" />
+                                                    </View>
+                                                )}
+                                            </LinearGradient>
+
+                                            {/* Emotion Info */}
+                                            <View style={styles.emotionInfo}>
+                                                <Text style={styles.emotionName}>
+                                                    {emotion.displayName || emotion.name}
+                                                </Text>
+                                                <Text style={styles.emotionDescription}>
+                                                    {emotion.description}
+                                                </Text>
+                                            </View>
+
+                                            {/* Arrow Indicator */}
+                                            <View style={styles.arrowContainer}>
+                                                <Ionicons name="chevron-forward" size={20} color={COLORS.textSecondary} />
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                </Link>
+                            );
+                        })}
+                    </View>
                 </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+
+                {/* Info Section */}
+                <View style={styles.infoSection}>
+                    <View style={styles.infoCard}>
+                        <Ionicons name="information-circle-outline" size={24} color={COLORS.primary} />
+                        <View style={styles.infoContent}>
+                            <Text style={styles.infoTitle}>About Emotion Categories</Text>
+                            <Text style={styles.infoText}>
+                                Each emotion category contains curated activities, readings, and exercises
+                                to help you understand and manage your feelings in healthy ways.
+                                Explore different emotional states to find the support you need.
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Bottom Spacer */}
+                <View style={styles.bottomSpacer} />
+            </Animated.ScrollView>
+        </View>
     );
-}
+};
 
-const { width } = Dimensions.get('window');
-const CARD_MARGIN = 8;
-const CARD_WIDTH = (width - (CARD_MARGIN * 3)) / 2; // 2 cards per row
+export default Categories;
 
+// ✅ Vertical List Styles
 const styles = StyleSheet.create({
-
-    circleContainer: {
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.background,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: COLORS.background,
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: COLORS.textSecondary,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 40,
+        backgroundColor: COLORS.background,
+    },
+    errorTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.textPrimary,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    errorText: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+        textAlign: 'center',
+        marginBottom: 24,
+        lineHeight: 22,
+    },
+    retryButton: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 12,
+    },
+    retryButtonText: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    header: {
+        paddingHorizontal: 24,
+        paddingTop: Platform.OS === 'ios' ? 50 : 30,
+        paddingBottom: 20,
+        backgroundColor: COLORS.background,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    headerContent: {
+        marginBottom: 12,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+        marginBottom: 8,
+        letterSpacing: -0.5,
+    },
+    subtitle: {
+        fontSize: 16,
+        color: COLORS.textSecondary,
+        fontWeight: '500',
+        lineHeight: 22,
+    },
+    errorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEF2F2',
+        padding: 12,
+        borderRadius: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: '#DC2626',
+        gap: 8,
+    },
+    errorBannerText: {
+        fontSize: 14,
+        color: '#DC2626',
+        flex: 1,
+    },
+    scrollContainer: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        paddingBottom: 40,
+    },
+    heroSection: {
+        alignItems: 'center',
+        paddingVertical: 30,
+        paddingHorizontal: 24,
+    },
+    illustrationContainer: {
         alignItems: 'center',
         justifyContent: 'center',
     },
     circleOuter: {
         position: 'relative',
-        width: 240,
-        height: 240,
+        width: 200,
+        height: 200,
         justifyContent: 'center',
         alignItems: 'center',
     },
     circleMiddle: {
         position: 'absolute',
-        width: 200,
-        height: 200,
-        borderRadius: 100,
-        borderWidth: 1,
-        borderColor: '#aaa',
-    },
-    circleInner: {
-        position: 'absolute',
         width: 160,
         height: 160,
         borderRadius: 80,
-        borderWidth: 1,
-        borderColor: '#888',
+        borderWidth: 2,
+        borderColor: 'rgba(4, 113, 74, 0.3)',
     },
-    imageContainer: {
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        borderWidth: 1,
-        borderColor: '#555',
-        overflow: 'hidden',
+    circleInner: {
+        position: 'absolute',
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 2,
+        borderColor: 'rgba(4, 113, 74, 0.5)',
+    },
+    brainContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: COLORS.white,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
     },
-    brainImage: {
-        width: '90%',
-        height: '90%',
-        resizeMode: 'contain'
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between', // This will properly space the items
+    listSection: {
         paddingHorizontal: 20,
-        paddingVertical: 5,
-        paddingTop: Platform.OS === 'ios' ? 50 : 20,
-        zIndex: 1,
-        backgroundColor: '#F0FFFA', // Match your background color
+        marginBottom: 30,
     },
-    title: {
-        fontFamily: 'Inter-Black',
-        fontSize: 20,
-        flex: 1,
-        textAlign: 'center', // Center the text
+    listTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.textPrimary,
+        marginBottom: 8,
+        textAlign: 'center',
     },
-    backButton: {
-        backgroundColor: 'white',
-        padding: 8,
-        borderRadius: 8,
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
+    listSubtitle: {
+        fontSize: 15,
+        color: COLORS.textSecondary,
+        textAlign: 'center',
+        marginBottom: 30,
+        lineHeight: 20,
     },
-    backButton2: {
-        padding: 8,
-        borderRadius: 8,
-        width: 40,
-        height: 40,
-        alignItems: 'center',
-        justifyContent: 'center',
+    cardsList: {
+        gap: 16,
     },
-    scrollContainer: {
-        paddingTop: 20, // Space for header
-        paddingBottom: 70,
-        paddingHorizontal: CARD_MARGIN,
+    cardContainer: {
+        backgroundColor: COLORS.white,
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 4,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
-    cardsGrid: {
-        flexDirection: 'column',
+    cardActive: {
+        transform: [{ scale: 1.01 }],
+        backgroundColor: COLORS.primaryLight,
+        borderColor: COLORS.primary,
     },
-    cardRow: {
+    cardContent: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: CARD_MARGIN,
+        alignItems: 'center',
+        gap: 16,
     },
-    emptyCard: {
-        width: CARD_WIDTH,
+    gradient: {
+        width: 60,
+        height: 60,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 4,
+        overflow: "hidden",
+    },
+    iconContainer: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    icon: {
+        fontSize: 24,
+    },
+    activeOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emotionInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    emotionName: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: COLORS.textPrimary,
+        marginBottom: 4,
+        textTransform: 'capitalize',
+    },
+    emotionDescription: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        lineHeight: 18,
+        fontWeight: '500',
+    },
+    arrowContainer: {
+        padding: 4,
+    },
+    infoSection: {
+        paddingHorizontal: 20,
+        marginTop: 20,
+    },
+    infoCard: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        backgroundColor: COLORS.primaryLight,
+        padding: 20,
+        borderRadius: 16,
+        gap: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: COLORS.primary,
+    },
+    infoContent: {
+        flex: 1,
+    },
+    infoTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: COLORS.textPrimary,
+        marginBottom: 8,
+    },
+    infoText: {
+        fontSize: 14,
+        color: COLORS.textSecondary,
+        lineHeight: 20,
+    },
+    bottomSpacer: {
+        height: 40,
     },
 });

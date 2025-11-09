@@ -1,4 +1,4 @@
-import { Databases, Client, Account } from 'react-native-appwrite';
+import { Databases, Client, Account, Query } from 'react-native-appwrite';
 
 const client = new Client()
     .setEndpoint('https://cloud.appwrite.io/v1') // Make sure to add your endpoint
@@ -8,4 +8,11 @@ const client = new Client()
 const account = new Account(client);
 const databases = new Databases(client);
 
+export { Query };
+
+export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID || ""
+export const COLLECTIONS = {
+    ACTIVITIES: 'activities',
+    EMOTION_TYPES: 'emotion_types',
+} as const;
 export { client, account, databases };

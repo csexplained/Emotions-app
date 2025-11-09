@@ -1,14 +1,27 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput, ActivityIndicator, RefreshControl } from "react-native";
-import { Link } from "expo-router";
+import {
+  View,
+  Pressable,
+  Text,
+  Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Dimensions,
+  TextInput,
+  ActivityIndicator,
+  RefreshControl,
+  Alert
+} from "react-native";
+import { Link, RelativePathString, router } from "expo-router";
 import Categories from '@/components/Home/Categories';
 import { Feather } from "@expo/vector-icons";
 import NotificationIcon from "@/assets/icons/Bellicon"
 import ActivityCard from "@/components/Home/ActivityCard";
 import { useAuthStore } from "@/store/authStore";
-import ActivityService from "@/lib/activity"; // Import the service we created earlier
-import { ActivityType } from "@/types/activitycard.types";
-
+import ActivityService from "@/lib/activity";
+import { ActivityType } from "@/types/Activitys.types";
 
 export default function Indexscreen() {
   const userprofile = useAuthStore(state => state.userProfile);
@@ -19,51 +32,79 @@ export default function Indexscreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState(""); // Separate state for input
 
-  const limit = 10; // Number of items per page
+  const limit = 10;
 
-  // Fetch activities with pagination
+  // In your home screen, update the fetchActivities function:
+
   const fetchActivities = useCallback(async (pageNum: number, isRefreshing = false) => {
     try {
       if (!isRefreshing) setLoading(true);
       setError(null);
 
+      const filters: any = {};
+
+      if (searchQuery) {
+        filters.search = searchQuery;
+      }
+
+
+      console.log('Fetching activities with filters:', filters);
+
       const newActivities = await ActivityService.getActivities({
         limit,
         offset: (pageNum - 1) * limit,
-        filters: searchQuery ? {
-          // Add search filters here based on your requirements
-          // For example, search by title or tags
-          type: searchQuery,
-        } : {},
-        sortField: "title",
-        sortOrder: "asc",
+        filters,
+        sortField: "popularity",
+        sortOrder: "desc",
       });
+
+      console.log(`Received ${newActivities.length} activities`);
 
       if (newActivities.length === 0) {
         setHasMore(false);
+        if (pageNum === 1) {
+          // No results found
+          setActivities([]);
+        }
       } else {
         if (pageNum === 1) {
           setActivities(newActivities);
-          //console.log("Activities fetched:", newActivities[0].redirect);
         } else {
           setActivities(prev => [...prev, ...newActivities]);
         }
       }
     } catch (err) {
-      setError("Failed to fetch activities. Please try again.");
-      console.error("Error fetching activities:", err);
+      console.error('Error in fetchActivities:', err);
+
+      let errorMessage = "Failed to fetch activities. Please check your connection.";
+
+      if (err instanceof Error) {
+        if (err.message.includes('Invalid query') || err.message.includes('search')) {
+          errorMessage = "Please use simpler search terms";
+        } else if (err.message.includes('network')) {
+          errorMessage = "Network error - please check your connection";
+        }
+      }
+
+      setError(errorMessage);
+
+      if (pageNum === 1) {
+        Alert.alert("Search Error", errorMessage);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery,]);
 
-  // Initial load
+  // Initial load and when searchQuery changes
   useEffect(() => {
+    setPage(1);
+    setHasMore(true);
     fetchActivities(1);
   }, [fetchActivities]);
-
   // Handle refresh
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -80,12 +121,27 @@ export default function Indexscreen() {
     }
   };
 
-  // Handle search
+  // Handle search submission
   const handleSearch = () => {
-    setPage(1);
-    setHasMore(true);
-    fetchActivities(1);
+    setSearchQuery(searchInput.trim());
   };
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
+  };
+
+  // Handle search input change with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.trim() !== searchQuery) {
+        setSearchQuery(searchInput.trim());
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [searchInput, searchQuery]);
 
   if (error && activities.length === 0) {
     return (
@@ -111,52 +167,80 @@ export default function Indexscreen() {
             style={styles.logo}
           />
           <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>{userprofile?.firstname} {userprofile?.lastname}</Text>
+            <Text style={styles.headerTitle}>
+              {userprofile?.firstname} {userprofile?.lastname}
+            </Text>
             <View style={styles.flexbox}>
               <Text style={styles.statusText}>
-                <Text style={{ color: "#04714A", marginRight: 2 }}>• </Text>Meditation
+                <Text style={{ color: "#04714A", marginRight: 2 }}>• </Text>
+                Ready to relax
               </Text>
             </View>
           </View>
         </View>
-      </View>
 
-      {/* Search Bar
-      <View style={styles.header}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Search"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          <Pressable
-            style={styles.sendButton}
-            onPress={handleSearch}
-          >
-            <Feather
-              name="search"
-              size={20}
-              color={"#ffffff"}
-            />
-          </Pressable>
+        <View style={styles.notificationContainer}>
+          <NotificationIcon />
         </View>
       </View>
 
-      */}
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.inputContainer}>
+          <Feather
+            name="search"
+            size={20}
+            color={"#04714A"}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Search activities..."
+            placeholderTextColor="#999"
+            value={searchInput}
+            onChangeText={setSearchInput}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+          {searchInput.length > 0 && (
+            <Pressable
+              style={styles.clearButton}
+              onPress={handleClearSearch}
+            >
+              <Feather
+                name="x"
+                size={18}
+                color={"#666"}
+              />
+            </Pressable>
+          )}
+        </View>
+      </View>
 
-
+      {/* Categories */}
       <Categories />
 
       {/* Section Header */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Trainings</Text>
-        <Link href={"/Trainings"} style={styles.seeAllLink}>
-          See All
-        </Link>
+        <Text style={styles.sectionTitle}>
+          {searchQuery ? `Search Results for "${searchQuery}"` : 'Featured Activities'}
+        </Text>
+        {!searchQuery && (
+          <Link href={"/Trainings"} style={styles.seeAllLink}>
+            See All
+          </Link>
+        )}
       </View>
+
+      {/* Search Results Info */}
+      {searchQuery && (
+        <View style={styles.searchInfo}>
+          <Text style={styles.searchInfoText}>
+            Found {activities.length} activity{activities.length !== 1 ? 'ies' : ''}
+          </Text>
+        </View>
+      )}
 
       {/* Scrollable Content */}
       <ScrollView
@@ -179,27 +263,59 @@ export default function Indexscreen() {
       >
         {activities.map(activity => (
           <ActivityCard
-            id={activity.$id}
-            redirect={`Trainings/${activity.redirect}?id=${activity.$id}`}
             key={activity.$id}
+            id={activity.$id}
             title={activity.title}
             description={activity.description}
             tags={activity.tags}
             duration={activity.duration}
             image={activity.image}
             colors={activity.colors}
+            redirect={activity.redirect}
+            activitytype={activity.activitytype}
+            difficulty={activity.difficulty}
+            onPress={() => {
+              // You can handle navigation here if needed
+              router.push(`/Trainings/${activity.redirect}?id=${activity.$id}` as RelativePathString)
+            }}
           />
         ))}
 
         {loading && activities.length > 0 && (
           <View style={styles.loadingMoreContainer}>
             <ActivityIndicator size="small" color="#04714A" />
+            <Text style={styles.loadingText}>Loading more activities...</Text>
           </View>
         )}
 
-        {!hasMore && (
+        {!hasMore && activities.length > 0 && (
           <View style={styles.endOfListContainer}>
-            <Text style={styles.endOfListText}>No more activities to show</Text>
+            <Text style={styles.endOfListText}>
+              {searchQuery ? 'No more activities found' : 'No more activities to show'}
+            </Text>
+          </View>
+        )}
+
+        {activities.length === 0 && !loading && (
+          <View style={styles.emptyState}>
+            <Feather name="search" size={48} color="#ccc" />
+            <Text style={styles.emptyStateTitle}>
+              {searchQuery ? 'No activities found' : 'No activities available'}
+            </Text>
+            <Text style={styles.emptyStateText}>
+              {searchQuery
+                ? 'Try adjusting your search terms or browse different categories'
+                : 'Check back later for new activities'
+              }
+            </Text>
+            {searchQuery && (
+              <Pressable
+                style={styles.clearSearchButton}
+                onPress={handleClearSearch}
+              >
+                <Text style={styles.clearSearchButtonText}>Clear Search</Text>
+              </Pressable>
+            )}
           </View>
         )}
       </ScrollView>
@@ -208,6 +324,7 @@ export default function Indexscreen() {
       {loading && activities.length === 0 && (
         <View style={styles.fullScreenLoading}>
           <ActivityIndicator size="large" color="#04714A" />
+          <Text style={styles.loadingText}>Loading activities...</Text>
         </View>
       )}
     </KeyboardAvoidingView>
@@ -216,71 +333,62 @@ export default function Indexscreen() {
 
 // Helper function to check if scroll is near bottom
 const isCloseToBottom = ({ layoutMeasurement, contentOffset, contentSize }: any) => {
-  const paddingToBottom = 20;
+  const paddingToBottom = 50;
   return (
     layoutMeasurement.height + contentOffset.y >=
     contentSize.height - paddingToBottom
   );
 };
 
-
 const { width } = Dimensions.get('window');
 const CARD_MARGIN = 12;
-const CARD_WIDTH = (width - (CARD_MARGIN * 3)) / 2; // 2 cards per row
 
 const styles = StyleSheet.create({
+  // Search Styles
+  searchContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#F0FFFA',
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 0,
-    borderRadius: 30,
-    padding: 5,
-    borderColor: "#04714A",
     backgroundColor: 'white',
+    borderRadius: 25,
+    paddingHorizontal: 15,
     borderWidth: 1,
+    borderColor: '#E0E0E0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  searchIcon: {
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    minHeight: 50,
-    maxHeight: 120,
-    paddingHorizontal: 12,
-    fontWeight: "800",
-    paddingVertical: 14,
-    borderRadius: 20,
+    paddingVertical: 12,
     fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
   },
-  sendButton: {
-    backgroundColor: "#04714A",
-    color: "ffffff",
-    borderRadius: 30,
-    padding: 10,
+  clearButton: {
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
   },
-  circleContainer: {
+
+  // Header Styles
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circleOuter: {
-    position: 'relative',
-    width: 240,
-    height: 240,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circleMiddle: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 1,
-    borderColor: '#aaa',
-  },
-  circleInner: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 1,
-    borderColor: '#888',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 5,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    backgroundColor: '#F0FFFA',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -288,16 +396,9 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 40,
-    backgroundColor: 'white',
     height: 40,
     marginRight: 12,
-    borderRadius: 5, // Circular logo
-  },
-  profileImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 25,
-    marginHorizontal: 8,
+    borderRadius: 5,
   },
   headerText: {
     flexDirection: 'column',
@@ -305,10 +406,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  aiText: {
-    color: '#04714A',
-    fontWeight: 'bold',
+    color: '#333',
   },
   flexbox: {
     height: "auto",
@@ -320,109 +418,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6C6C6C',
   },
-  menuButton: {
-    borderRadius: 50,
-    backgroundColor: 'white',
-    padding: 10,
-  },
-  imageContainer: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 1,
-    borderColor: '#555',
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  brainImage: {
-    width: '90%',
-    height: '90%',
-    resizeMode: 'contain'
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between', // This will properly space the items
-    paddingHorizontal: 20,
-    paddingVertical: 5,
-    paddingTop: Platform.OS === 'ios' ? 50 : 20,
-    zIndex: 1,
-    backgroundColor: '#F0FFFA', // Match your background color
-  },
-  title: {
-    fontFamily: 'Inter-Black',
-    fontSize: 20,
-    flex: 1,
-    textAlign: 'center', // Center the text
-  },
-  backButton: {
-    backgroundColor: 'white',
+  notificationContainer: {
     padding: 8,
-    borderRadius: 8,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backButton2: {
-    padding: 8,
-    borderRadius: 8,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scrollContainer: {
-    paddingTop: 4, // Space for header
-    paddingBottom: 70,
-    paddingHorizontal: CARD_MARGIN,
   },
 
+  // Section Styles
   sectionHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: '100%',
+    backgroundColor: '#F0FFFA',
   },
   sectionTitle: {
     fontWeight: '800',
     fontSize: 20,
+    color: '#333',
   },
   seeAllLink: {
     color: "#04714A",
     fontWeight: '800',
     fontSize: 15,
-    paddingVertical: 2.5,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: "#F0FFFA",
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#04714A',
+
+  // Search Info
+  searchInfo: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    paddingBottom: 10,
+    backgroundColor: '#F0FFFA',
   },
-  retryButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+  searchInfoText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
   },
+
+  // Scroll Container
+  scrollContainer: {
+    paddingTop: 4,
+    paddingBottom: 100,
+    paddingHorizontal: CARD_MARGIN,
+    minHeight: 200,
+  },
+
+  // Loading and Empty States
   loadingMoreContainer: {
     paddingVertical: 20,
     alignItems: 'center',
+    gap: 10,
+  },
+  loadingText: {
+    color: '#04714A',
+    fontSize: 14,
+    marginTop: 8,
   },
   endOfListContainer: {
     paddingVertical: 20,
@@ -436,6 +485,67 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    backgroundColor: '#F0FFFA',
+    gap: 15,
+  },
+
+  // Error States
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: "#F0FFFA",
+  },
+  errorText: {
+    color: '#E74C3C',
+    fontSize: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#04714A',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  // Empty State
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 40,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  clearSearchButton: {
+    marginTop: 20,
+    backgroundColor: '#04714A',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  clearSearchButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });

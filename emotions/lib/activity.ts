@@ -1,206 +1,349 @@
-import { ID, Query } from 'react-native-appwrite';
-import { databases } from './appwrite';
-import { ImageSourcePropType } from "react-native";
-import { ActivityType } from '@/types/activitycard.types';
-// Assert that environment variables are defined
-const databaseId = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID as string;
-const activityCollectionId = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ACTIVITYCOLLECTION as string;
+import { databases, DATABASE_ID, COLLECTIONS, Query } from './appwrite';
+import { ActivityType, ActivityStep } from '@/types/Activitys.types';
 
-if (!databaseId || !activityCollectionId) {
-    throw new Error("Missing required environment variables for Appwrite configuration");
-}
-
-
-interface UpdateQuestionsData {
-    questionsObj?: string;
-}
-
-interface GetActivitiesOptions {
+interface GetActivitiesParams {
     limit?: number;
     offset?: number;
-    sortField?: string;
-    sortOrder?: 'asc' | 'desc';
     filters?: {
         type?: string;
-        activitytype?: string;
+        search?: string;
         difficulty?: string;
-        tags?: string[];
+        activitytype?: string;
     };
+    sortField?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
-const ActivityService = {
-    /**
-     * Get all activities with optional sorting and filtering
-     * @param options - Options for querying activities
-     * @returns Promise<ActivityType[]>
-     */
-    async getActivities(options: GetActivitiesOptions = {}): Promise<ActivityType[]> {
+class ActivityService {
+    async getActivities(params: GetActivitiesParams = {}): Promise<ActivityType[]> {
         try {
-            const queries = [];
+            const {
+                limit = 10,
+                offset = 0,
+                filters = {},
+                sortField = 'popularity',
+                sortOrder = 'desc'
+            } = params;
 
-            // Add sorting if specified
-            if (options.sortField) {
-                queries.push(
-                    options.sortOrder === 'asc'
-                        ? Query.orderAsc(options.sortField)
-                        : Query.orderDesc(options.sortField)
-                );
+            // Build queries array
+            const queries: string[] = [
+                Query.limit(limit),
+                Query.offset(offset),
+            ];
+
+            // Add filters
+            if (filters.type && filters.type !== 'all') {
+                queries.push(Query.equal('type', filters.type));
             }
 
-            // Add filters if specified
-            if (options.filters) {
-                if (options.filters.type) {
-                    queries.push(Query.equal('type', options.filters.type));
-                }
-                if (options.filters.activitytype) {
-                    queries.push(Query.equal('activitytype', options.filters.activitytype));
-                }
-                if (options.filters.difficulty) {
-                    queries.push(Query.equal('difficulty', options.filters.difficulty));
-                }
-                if (options.filters.tags && options.filters.tags.length > 0) {
-                    queries.push(Query.equal('tags', options.filters.tags));
-                }
+            if (filters.difficulty && filters.difficulty !== 'all') {
+                queries.push(Query.equal('difficulty', filters.difficulty));
             }
 
-            // Add pagination if specified
-            if (options.limit) {
-                queries.push(Query.limit(options.limit));
-            }
-            if (options.offset) {
-                queries.push(Query.offset(options.offset));
+            if (filters.activitytype && filters.activitytype !== 'all') {
+                queries.push(Query.equal('activitytype', filters.activitytype));
             }
 
+            // Add search filter - FIXED: Don't search on array fields
+            if (filters.search && filters.search.trim() !== '') {
+
+            }
+
+            // Add sorting
+            if (sortField === 'title') {
+                queries.push(sortOrder === 'asc' ? Query.orderAsc('title') : Query.orderDesc('title'));
+            } else if (sortField === 'popularity') {
+                queries.push(sortOrder === 'asc' ? Query.orderAsc('popularity') : Query.orderDesc('popularity'));
+            } else {
+                queries.push(Query.orderDesc('$createdAt')); // Default sort
+            }
+
+            console.log('Fetching activities with queries:', queries);
+
+            // Fetch from Appwrite
             const response = await databases.listDocuments(
-                databaseId,
-                activityCollectionId,
+                DATABASE_ID,
+                COLLECTIONS.ACTIVITIES,
                 queries
             );
 
-            return response.documents as unknown as ActivityType[];
-        } catch (error) {
-            console.error('Error fetching activities:', error);
-            throw error;
-        }
-    },
+            console.log(`Found ${response.documents.length} activities`);
 
-    /**
-     * Get a single activity by ID
-     * @param id - The ID of the activity to retrieve
-     * @returns Promise<ActivityType>
-     */
-    async getActivityById(id: string): Promise<ActivityType> {
-        try {
-            const response = await databases.getDocument(
-                databaseId,
-                activityCollectionId,
-                id
-            );
-            return response as unknown as ActivityType;
-        } catch (error) {
-            console.error(`Error fetching activity with ID ${id}:`, error);
-            throw error;
-        }
-    },
-
-    /**
-     * Get activities by type with optional sorting
-     * @param type - The activity type to filter by
-     * @param sortOptions - Optional sorting options
-     * @returns Promise<ActivityType[]>
-     */
-    async getActivitiesByType(
-        type: string,
-        sortOptions?: {
-            field: string;
-            order: 'asc' | 'desc';
-        }
-    ): Promise<ActivityType[]> {
-        try {
-            const queries = [Query.equal('type', type)];
-
-            if (sortOptions) {
-                queries.push(
-                    sortOptions.order === 'asc'
-                        ? Query.orderAsc(sortOptions.field)
-                        : Query.orderDesc(sortOptions.field)
-                );
+            // If we have a search query, we need to filter by tags manually
+            let filteredDocuments = response.documents;
+            if (filters.search && filters.search.trim() !== '') {
+                filteredDocuments = this.filterByTags(response.documents, filters.search);
             }
 
-            const response = await databases.listDocuments(
-                databaseId,
-                activityCollectionId,
-                queries
-            );
+            // Transform Appwrite documents to ActivityType
+            const activities: ActivityType[] = filteredDocuments.map(doc => this.transformDocumentToActivity(doc));
 
-            return response.documents as unknown as ActivityType[];
-        } catch (error) {
-            console.error(`Error fetching activities by type ${type}:`, error);
-            throw error;
-        }
-    },
+            return activities;
 
-    /**
-     * Create a new activity
-     * @param activityData - The activity data to create
-     * @returns Promise<ActivityType>
-     */
-    async createActivity(activityData: Omit<ActivityType, 'id'>): Promise<ActivityType> {
-        try {
-            const response = await databases.createDocument(
-                databaseId,
-                activityCollectionId,
-                ID.unique(),
-                activityData
-            );
-            return response as unknown as ActivityType;
         } catch (error) {
-            console.error('Error creating activity:', error);
-            throw error;
-        }
-    },
+            console.error('Error fetching activities from Appwrite:', error);
 
-    /**
-     * Update an existing activity
-     * @param id - The ID of the activity to update
-     * @param activityData - The partial activity data to update
-     * @returns Promise<ActivityType>
-     */
-    async updateActivity(
-        id: string,
-        activityData: Partial<ActivityType>
-    ): Promise<ActivityType> {
-        try {
-            const response = await databases.updateDocument(
-                databaseId,
-                activityCollectionId,
-                id,
-                activityData
-            );
-            return response as unknown as ActivityType;
-        } catch (error) {
-            console.error(`Error updating activity with ID ${id}:`, error);
-            throw error;
-        }
-    },
+            // More specific error handling
+            if (error instanceof Error) {
+                if (error.message.includes('Invalid query')) {
+                    throw new Error('Search query contains invalid characters');
+                } else if (error.message.includes('network') || error.message.includes('Network')) {
+                    throw new Error('Network error - please check your connection');
+                }
+            }
 
-    /**
-     * Delete an activity
-     * @param id - The ID of the activity to delete
-     * @returns Promise<void>
-     */
-    async deleteActivity(id: string): Promise<void> {
-        try {
-            await databases.deleteDocument(
-                databaseId,
-                activityCollectionId,
-                id
-            );
-        } catch (error) {
-            console.error(`Error deleting activity with ID ${id}:`, error);
-            throw error;
+            throw new Error('Failed to fetch activities');
         }
     }
-};
 
-export default ActivityService;
+    // Manual filter for tags since we can't search arrays in Appwrite
+    private filterByTags(documents: any[], searchQuery: string): any[] {
+        if (!searchQuery || searchQuery.trim() === '') {
+            return documents;
+        }
+
+        const searchLower = searchQuery.toLowerCase().trim();
+
+        return documents.filter(doc => {
+            // Check if any tag matches the search
+            if (doc.tags && Array.isArray(doc.tags)) {
+                const hasMatchingTag = doc.tags.some((tag: string) =>
+                    tag.toLowerCase().includes(searchLower)
+                );
+
+                if (hasMatchingTag) {
+                    return true;
+                }
+            }
+
+            // Also check other fields that might contain relevant info
+            const otherFieldsMatch =
+                (doc.type && doc.type.toLowerCase().includes(searchLower)) ||
+                (doc.activitytype && doc.activitytype.toLowerCase().includes(searchLower)) ||
+                (doc.difficulty && doc.difficulty.toLowerCase().includes(searchLower));
+
+            return otherFieldsMatch;
+        });
+    }
+
+    async getActivityById(id: string): Promise<ActivityType | null> {
+        try {
+            const document = await databases.getDocument(
+                DATABASE_ID,
+                COLLECTIONS.ACTIVITIES,
+                id
+            );
+
+            return this.transformDocumentToActivity(document);
+        } catch (error) {
+            console.error('Error fetching activity by ID:', error);
+            return null;
+        }
+    }
+
+    async getFeaturedActivities(): Promise<ActivityType[]> {
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.ACTIVITIES,
+                [
+                    Query.equal('isFeatured', true),
+                    Query.limit(10),
+                    Query.orderDesc('popularity')
+                ]
+            );
+
+            return response.documents.map(doc => this.transformDocumentToActivity(doc));
+        } catch (error) {
+            console.error('Error fetching featured activities:', error);
+            throw new Error('Failed to fetch featured activities');
+        }
+    }
+
+    async getActivitiesByType(type: string): Promise<ActivityType[]> {
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.ACTIVITIES,
+                [
+                    Query.equal('type', type),
+                    Query.limit(20),
+                    Query.orderDesc('popularity')
+                ]
+            );
+
+            return response.documents.map(doc => this.transformDocumentToActivity(doc));
+        } catch (error) {
+            console.error('Error fetching activities by type:', error);
+            throw new Error('Failed to fetch activities by type');
+        }
+    }
+
+    async getActivitiesByEmotion(emotion: string): Promise<ActivityType[]> {
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.ACTIVITIES,
+                [
+                    Query.equal('type', emotion),
+                    Query.limit(20),
+                    Query.orderDesc('popularity')
+                ]
+            );
+
+            return response.documents.map(doc => this.transformDocumentToActivity(doc));
+        } catch (error) {
+            console.error('Error fetching activities by emotion:', error);
+            throw new Error('Failed to fetch activities by emotion');
+        }
+    }
+
+    // Enhanced search with better error handling
+    async searchActivities(searchTerm: string, limit: number = 20): Promise<ActivityType[]> {
+        try {
+            if (!searchTerm || searchTerm.trim() === '') {
+                return this.getActivities({ limit });
+            }
+
+            // Clean the search term - remove special characters that might break the query
+            const cleanSearchTerm = searchTerm.replace(/[^\w\s]/gi, '').trim();
+
+            if (cleanSearchTerm.length === 0) {
+                return [];
+            }
+
+            const queries = [
+                Query.limit(limit),
+                Query.or([
+                    Query.search('title', cleanSearchTerm),
+                    Query.search('description', cleanSearchTerm),
+                    Query.search('type', cleanSearchTerm),
+                    Query.search('activitytype', cleanSearchTerm),
+                    Query.search('exerciseName', cleanSearchTerm),
+                ])
+            ];
+
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTIONS.ACTIVITIES,
+                queries
+            );
+
+            // Manual tag filtering for better search results
+            const filteredDocuments = this.filterByTags(response.documents, cleanSearchTerm);
+
+            return filteredDocuments.map(doc => this.transformDocumentToActivity(doc));
+
+        } catch (error) {
+            console.error('Error in searchActivities:', error);
+
+            // Fallback: get all activities and filter locally
+            console.log('Using fallback search method...');
+            try {
+                const allActivities = await this.getActivities({ limit: 50 });
+                return this.localSearch(allActivities, searchTerm);
+            } catch (fallbackError) {
+                console.error('Fallback search also failed:', fallbackError);
+                throw new Error('Search failed. Please try again.');
+            }
+        }
+    }
+
+    // Local search as fallback
+    private localSearch(activities: ActivityType[], searchTerm: string): ActivityType[] {
+        const searchLower = searchTerm.toLowerCase().trim();
+
+        return activities.filter(activity => {
+            return (
+                activity.title.toLowerCase().includes(searchLower) ||
+                activity.description.toLowerCase().includes(searchLower) ||
+                activity.type.toLowerCase().includes(searchLower) ||
+                activity.activitytype.toLowerCase().includes(searchLower) ||
+                activity.exerciseName?.toLowerCase().includes(searchLower) ||
+                activity.tags.some(tag => tag.toLowerCase().includes(searchLower))
+            );
+        });
+    }
+
+    // Helper method to transform Appwrite document to ActivityType
+    private transformDocumentToActivity(doc: any): ActivityType {
+        // Parse steps from JSON string
+        let steps: ActivityStep[] = [];
+        try {
+            if (typeof doc.steps === 'string') {
+                steps = JSON.parse(doc.steps);
+            } else if (Array.isArray(doc.steps)) {
+                steps = doc.steps;
+            }
+        } catch (error) {
+            console.error('Error parsing steps:', error);
+            steps = [];
+        }
+
+        // Parse stepConfig from JSON string
+        let stepConfig = undefined;
+        try {
+            if (doc.stepConfig && typeof doc.stepConfig === 'string') {
+                stepConfig = JSON.parse(doc.stepConfig);
+            }
+        } catch (error) {
+            console.error('Error parsing stepConfig:', error);
+        }
+
+        // Use first image from imagepath as the main image, or fallback to local asset
+        const mainImage = doc.imagepath && doc.imagepath.length > 0
+            ? { uri: doc.imagepath[0] }
+            : require('@/assets/images/ActivityCard.png');
+
+        return {
+            $id: doc.$id,
+            name: doc.name || '',
+            title: doc.title || '',
+            type: doc.type || '',
+            activitytype: doc.activitytype || 'Exercise',
+            difficulty: doc.difficulty || 'Easy',
+            tags: doc.tags || [],
+            description: doc.description || '',
+            activityDescription: doc.activityDescription || '',
+            image: mainImage,
+            imagepath: doc.imagepath || [],
+            Musicpath: doc.Musicpath || 'N/A',
+            colors: doc.colors && doc.colors.length >= 2
+                ? [doc.colors[0], doc.colors[1]] as [string, string]
+                : ['#D7FFF1', '#58DFAE'] as [string, string],
+            redirect: doc.redirect || 'trainingscreen',
+            time: doc.time || '',
+            duration: doc.duration || '',
+            distance: doc.distance || '',
+            exerciseName: doc.exerciseName || '',
+            steps: steps,
+            stepConfig: stepConfig,
+            isFeatured: doc.isFeatured || false,
+            popularity: doc.popularity || 0,
+            $createdAt: doc.$createdAt,
+            $updatedAt: doc.$updatedAt
+        };
+    }
+
+    // Method to increment popularity when activity is viewed
+    async incrementPopularity(activityId: string): Promise<void> {
+        try {
+            const activity = await this.getActivityById(activityId);
+            if (activity) {
+                const newPopularity = (activity.popularity || 0) + 1;
+                await databases.updateDocument(
+                    DATABASE_ID,
+                    COLLECTIONS.ACTIVITIES,
+                    activityId,
+                    {
+                        popularity: newPopularity
+                    }
+                );
+            }
+        } catch (error) {
+            console.error('Error incrementing popularity:', error);
+        }
+    }
+}
+
+export default new ActivityService();

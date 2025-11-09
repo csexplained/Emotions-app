@@ -85,7 +85,7 @@ const activitiesData = [
   {
     id: "103",
     type: "Anger",
-    title: "Guided Visualization",
+    title: " Visualization",
     description: "Reduce emotional intensity by visualizing a peaceful state.",
     tags: ["Anger", "Visualization", "Calm", "Balance"],
     duration: "10 min",

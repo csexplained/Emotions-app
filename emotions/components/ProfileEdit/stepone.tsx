@@ -149,21 +149,7 @@ export default function Stepone({ userdata, authData, onSubmit, loading, error, 
                         </Pressable>
                     </View>
 
-                    <View style={styles.profileSection}>
-                        <View style={styles.profileImageContainer}>
-                            <Image
-                                style={styles.profileImage}
-                                source={profileImage}
-                            />
-                            {/*onPress={showImagePickerOptions}*/}
-                            <Pressable
-                                onPress={() => Alert.alert("Coming Soon", "This Feature will be added Soon")}
-                                style={styles.cameraButton}
-                            >
-                                <FontAwesome name="camera" size={16} color="white" />
-                            </Pressable>
-                        </View>
-                    </View>
+                   
 
                     <View style={styles.nameInputContainer}>
                         <View style={styles.nameInputWrapper}>
