@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, Pressable, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, Dimensions, TextInput, ActivityIndicator, RefreshControl } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { router } from "expo-router";
+import { RelativePathString, router } from "expo-router";
 import ActivityCard from "@/components/Home/ActivityCard";
 import ActivityService from "@/lib/activity";
-import { ActivityType } from "@/types/activitycard.types";
+import { ActivityType } from "@/types/Activitys.types";
 
 export default function Indexscreen() {
   const [activities, setActivities] = useState<ActivityType[]>([]);
@@ -153,15 +153,21 @@ export default function Indexscreen() {
       >
         {activities.map(activity => (
           <ActivityCard
-            id={activity.$id}
-            redirect={`Trainings/${activity.redirect}?id=${activity.$id}`}
             key={activity.$id}
+            id={activity.$id}
             title={activity.title}
             description={activity.description}
             tags={activity.tags}
             duration={activity.duration}
             image={activity.image}
             colors={activity.colors}
+            redirect={activity.redirect}
+            activitytype={activity.activitytype}
+            difficulty={activity.difficulty}
+            onPress={() => {
+              // You can handle navigation here if needed
+              router.push(`/Trainings/${activity.redirect}?id=${activity.$id}` as RelativePathString)
+            }}
           />
         ))}
 
