@@ -14,7 +14,7 @@ export default function StartScreen({ setStartChat }: { setStartChat: (value: bo
             <Text style={styles.welcomeText}>Welcome To</Text>
             <Text style={styles.titleText}>Emotions <Text style={styles.aiText}>AI</Text></Text>
             <Text style={styles.subtitle1}>
-                Start chatting with Nafs Ai Now.
+                Start chatting with Emotions Ai Now.
             </Text>
             <Text style={styles.subtitle2}>
                 You can ask me anything

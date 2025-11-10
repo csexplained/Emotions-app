@@ -1,525 +1,539 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
-    Pressable,
-    Image,
-    FlatList,
     TextInput,
+    TouchableOpacity,
+    FlatList,
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    Animated,
+    Image,
+    Alert,
     ActivityIndicator,
-    Keyboard
-} from "react-native";
-import { Ionicons, Entypo } from "@expo/vector-icons";
+    StatusBar,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import Feather from '@expo/vector-icons/Feather';
-import Modeselector from "./Modeselecter";
-import { getOpenAIResponse } from "@/lib/openai";
+import {
+    getGeminiResponse,
+    getGeminiVisionResponse,
+    getGeminiChatResponse,
+    imageToBase64,
+    createChatMessage,
+    ChatMessage
+} from '@/lib/newgeminiAi';
 
-const ChatScreen = () => {
-    interface Message {
-        id: string;
-        text?: string;
-        image?: string;
-        time: string;
-        isMe: boolean;
-        isLoading?: boolean;
-    }
+interface Message {
+    id: string;
+    text: string;
+    isUser: boolean;
+    timestamp: Date;
+    imageUri?: string;
+}
 
-    const modes = ["Anger", "Fear", "Happiness"];
-    const [mode, setMode] = useState("");
-    const initialMessages: Message[] = [
-        { id: '1', text: `Hello! How can I help you today?`, time: "", isMe: false },
-    ];
+const MODES = [
+    { id: 'general', name: 'General Support', icon: 'chatbubbles', color: '#4CAF50' },
+    { id: 'anxiety', name: 'Anxiety Relief', icon: 'heart', color: '#8BC34A' },
+    { id: 'stress', name: 'Stress Management', icon: 'fitness', color: '#CDDC39' },
+    { id: 'mindfulness', name: 'Mindfulness', icon: 'leaf', color: '#4CAF50' },
+    { id: 'motivation', name: 'Motivation', icon: 'rocket', color: '#8BC34A' },
+];
 
-    const [messages, setMessages] = useState<Message[]>(initialMessages);
-    const [newMessage, setNewMessage] = useState("");
-    const scrollViewRef = useRef<FlatList>(null);
-    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    const userProfileImage = require('@/assets/images/chatlogo.png');
-    const aiProfileImage = require('@/assets/images/chatlogo.png');
-
-    const generateId = () => Math.random().toString(36).substr(2, 9);
+export const ChatScreen: React.FC = () => {
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [inputText, setInputText] = useState('');
+    const [selectedMode, setSelectedMode] = useState('general');
+    const [isLoading, setIsLoading] = useState(false);
+    const [showModeSelector, setShowModeSelector] = useState(false);
+    const flatListRef = useRef<FlatList>(null);
 
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            () => {
-                setIsKeyboardVisible(true);
-                scrollToBottom();
-            }
-        );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
-            () => {
-                setIsKeyboardVisible(false);
-            }
-        );
-
-        return () => {
-            keyboardDidShowListener.remove();
-            keyboardDidHideListener.remove();
-        };
+        setMessages([{
+            id: '1',
+            text: "Hello! I'm your mindfulness assistant. How can I support you today? Choose a mode above to get started.",
+            isUser: false,
+            timestamp: new Date(),
+        }]);
     }, []);
 
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-        }).start();
-    }, [fadeAnim]);
+    const scrollToBottom = () => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+    };
 
-    const scrollToBottom = useCallback(() => {
-        if (scrollViewRef.current && messages.length > 0) {
-            requestAnimationFrame(() => {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-            });
-        }
+    useEffect(() => {
+        scrollToBottom();
     }, [messages]);
 
-    const handleSend = async () => {
-        if (newMessage.trim() && mode.length > 0) {
-            const userMsg = {
-                id: generateId(),
-                text: newMessage,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isMe: true
-            };
-
-            setMessages(prev => [...prev, userMsg]);
-            setNewMessage("");
-
-            const loadingMsg = {
-                id: generateId(),
-                text: "",
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isMe: false,
-                isLoading: true
-            };
-            setMessages(prev => [...prev, loadingMsg]);
-
-            try {
-                const aiReplyText = await getOpenAIResponse(newMessage, mode);
-
-                setMessages(prev => [
-                    ...prev.filter(msg => msg.id !== loadingMsg.id),
-                    {
-                        ...loadingMsg,
-                        text: aiReplyText,
-                        isLoading: false
-                    }
-                ]);
-            } catch (error) {
-                console.error("Error getting AI response:", error);
-                setMessages(prev => [
-                    ...prev.filter(msg => msg.id !== loadingMsg.id),
-                    {
-                        ...loadingMsg,
-                        text: "Sorry, I encountered an error. Please try again.",
-                        isLoading: false
-                    }
-                ]);
-            } finally {
-                scrollToBottom();
+    const pickImage = async () => {
+        try {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission needed', 'Sorry, we need camera roll permissions to make this work!');
+                return;
             }
+
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.8,
+                base64: true,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                await sendMessageWithImage(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image');
         }
     };
 
-    const openCamera = async () => {
-        const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-        if (permissionResult.granted === false) {
-            alert("Permission to access camera is required!");
+    const takePhoto = async () => {
+        try {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission needed', 'Sorry, we need camera permissions to make this work!');
+                return;
+            }
+
+            const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.8,
+                base64: true,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                await sendMessageWithImage(result.assets[0].uri);
+            }
+        } catch (error) {
+            console.error('Error taking photo:', error);
+            Alert.alert('Error', 'Failed to take photo');
+        }
+    };
+
+    const sendMessageWithImage = async (imageUri: string) => {
+        if (!inputText.trim()) {
+            Alert.alert('Message needed', 'Please add a message with your image');
             return;
         }
 
-        const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            text: inputText,
+            isUser: true,
+            timestamp: new Date(),
+            imageUri,
+        };
 
-        if (!result.canceled) {
-            const newMsg = {
-                id: generateId(),
-                image: result.assets[0].uri,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                isMe: true
+        setMessages(prev => [...prev, userMessage]);
+        setInputText('');
+        setIsLoading(true);
+
+        try {
+            const base64Image = await imageToBase64(imageUri);
+            const response = await getGeminiVisionResponse(inputText, selectedMode, base64Image);
+
+            const botMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: response,
+                isUser: false,
+                timestamp: new Date(),
             };
-            setMessages(prev => [...prev, newMsg]);
-            setTimeout(scrollToBottom, 100);
+
+            setMessages(prev => [...prev, botMessage]);
+        } catch (error) {
+            console.error('Error sending image message:', error);
+            const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: "Sorry, I couldn't process your image. Please try again.",
+                isUser: false,
+                timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const renderMessage = useCallback(({ item }: { item: Message }) => (
-        <Animated.View
-            key={item.id}
-            style={[
-                styles.messageWrapper,
-                item.isMe ? styles.myMessageWrapper : styles.otherMessageWrapper,
-                { opacity: fadeAnim }
-            ]}
-        >
-            {!item.isMe && (
-                <Image
-                    source={aiProfileImage}
-                    style={styles.profileImage}
-                />
+    const sendMessage = async () => {
+        if (!inputText.trim() || isLoading) return;
+
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            text: inputText,
+            isUser: true,
+            timestamp: new Date(),
+        };
+
+        setMessages(prev => [...prev, userMessage]);
+        setInputText('');
+        setIsLoading(true);
+
+        try {
+            const chatHistory: ChatMessage[] = messages
+                .filter(msg => !msg.imageUri)
+                .slice(-10)
+                .map(msg => createChatMessage(
+                    msg.isUser ? 'user' : 'model',
+                    msg.text
+                ));
+
+            const response = await getGeminiChatResponse(inputText, selectedMode, chatHistory);
+
+            const botMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: response,
+                isUser: false,
+                timestamp: new Date(),
+            };
+
+            setMessages(prev => [...prev, botMessage]);
+        } catch (error) {
+            console.error('Error sending message:', error);
+            const errorMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                text: "Sorry, I'm having trouble responding. Please try again.",
+                isUser: false,
+                timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const renderMessage = ({ item }: { item: Message }) => (
+        <View style={[
+            styles.messageContainer,
+            item.isUser ? styles.userMessage : styles.botMessage
+        ]}>
+            {item.imageUri && (
+                <Image source={{ uri: item.imageUri }} style={styles.messageImage} />
             )}
-            <View
-                style={[
-                    styles.messageContainer,
-                    item.isMe ? styles.myMessage : styles.otherMessage,
-                    item.isLoading && styles.loadingMessage
-                ]}
-            >
-                {item.image ? (
-                    <Image
-                        source={{ uri: item.image }}
-                        style={styles.messageImage}
-                        resizeMode="cover"
-                    />
-                ) : item.isLoading ? (
-                    <ActivityIndicator size="small" color="#04714A" />
-                ) : (
-                    <Text style={item.isMe ? styles.myMessageText : styles.otherMessageText}>
-                        {item.text}
-                    </Text>
-                )}
-                {!item.isLoading && (
-                    <Text style={[
-                        styles.messageTime,
-                        item.isMe ? styles.myMessageTime : styles.otherMessageTime
-                    ]}>
-                        {item.time}
-                    </Text>
-                )}
-            </View>
-            {item.isMe && (
-                <Image
-                    source={userProfileImage}
-                    style={styles.profileImage}
-                />
-            )}
-        </Animated.View>
-    ), []);
+            <Text style={[
+                styles.messageText,
+                item.isUser ? styles.userMessageText : styles.botMessageText
+            ]}>
+                {item.text}
+            </Text>
+            <Text style={styles.timestamp}>
+                {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+        </View>
+    );
+
+    const getModeInfo = (modeId: string) => {
+        return MODES.find(mode => mode.id === modeId) || MODES[0];
+    };
+
+    const currentMode = getModeInfo(selectedMode);
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
-        >
-            {/* Header */}
-            <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-                <View style={styles.headerLeft}>
-                    <Image
-                        source={aiProfileImage}
-                        style={styles.logo}
-                    />
+        <View style={styles.container}>
+            <StatusBar backgroundColor="#4CAF50" barStyle="light-content" />
+
+            {/* Custom Header */}
+            <View style={styles.header}>
+                <View style={styles.headerContent}>
+                    <View style={[styles.modeIndicator, { backgroundColor: currentMode.color }]}>
+                        <Ionicons
+                            name={currentMode.icon as any}
+                            size={20}
+                            color="white"
+                        />
+                    </View>
                     <View style={styles.headerText}>
-                        <Text style={styles.headerTitle}>Emotions <Text style={styles.aiText}>AI</Text></Text>
-                        <Text style={styles.statusText}>Online</Text>
+                        <Text style={styles.headerTitle}>Mindful Assistant</Text>
+                        <TouchableOpacity onPress={() => setShowModeSelector(!showModeSelector)}>
+                            <Text style={styles.modeText}>{currentMode.name}</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
-            </Animated.View>
 
-            {/* Chat Messages */}
-            <Pressable
-                style={styles.messagesContainer}
-                onPress={Keyboard.dismiss}
-            >
+                <TouchableOpacity
+                    style={styles.modeSelectorButton}
+                    onPress={() => setShowModeSelector(!showModeSelector)}
+                >
+                    <Ionicons name="chevron-down" size={24} color="white" />
+                </TouchableOpacity>
+            </View>
+
+            {/* Mode Selector */}
+            {showModeSelector && (
+                <View style={styles.modeSelector}>
+                    {MODES.map(mode => (
+                        <TouchableOpacity
+                            key={mode.id}
+                            style={[
+                                styles.modeOption,
+                                selectedMode === mode.id && styles.selectedModeOption
+                            ]}
+                            onPress={() => {
+                                setSelectedMode(mode.id);
+                                setShowModeSelector(false);
+                            }}
+                        >
+                            <View style={[styles.modeIcon, { backgroundColor: mode.color }]}>
+                                <Ionicons name={mode.icon as any} size={16} color="white" />
+                            </View>
+                            <Text style={styles.modeOptionText}>{mode.name}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+
+            {/* Chat Messages Area */}
+            <View style={styles.chatArea}>
                 <FlatList
-                    ref={scrollViewRef}
+                    ref={flatListRef}
                     data={messages}
                     renderItem={renderMessage}
-                    keyExtractor={(item) => item.id}
-                    style={styles.chatContainer}
-                    contentContainerStyle={styles.chatContent}
+                    keyExtractor={item => item.id}
+                    style={styles.messagesList}
+                    contentContainerStyle={styles.messagesContent}
                     showsVerticalScrollIndicator={false}
-                    onContentSizeChange={scrollToBottom}
                     onLayout={scrollToBottom}
-                    keyboardShouldPersistTaps="handled"
-                    removeClippedSubviews={Platform.OS === 'android'}
-                    ListHeaderComponent={mode === "" ? <Modeselector selectedmode={mode} setmode={setMode} modes={modes} /> : null}
-                    overScrollMode="always"
-                    bounces={true}
-                    alwaysBounceVertical={true}
-                    nestedScrollEnabled={true}
                 />
-            </Pressable>
+            </View>
 
-            {/* Input Area */}
-            <Animated.View
-                style={[
-                    styles.inputContainer,
-                    isKeyboardVisible && styles.inputContainerKeyboardActive,
-                    { opacity: fadeAnim }
-                ]}
+            {/* Input Area with Keyboard Handling */}
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                style={styles.keyboardAvoidingView}
             >
-                <Pressable
-                    style={styles.cameraButton}
-                    onPress={openCamera}
-                    android_ripple={{ color: '#333', borderless: true }}
-                >
-                    <Ionicons name="camera-outline" size={24} color="#ffffff" />
-                </Pressable>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Ask me anything.."
-                    placeholderTextColor="#999"
-                    value={newMessage}
-                    onChangeText={setNewMessage}
-                    multiline
-                    onSubmitEditing={handleSend}
-                    blurOnSubmit={false}
-                />
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.sendButton,
-                        pressed && styles.sendButtonPressed,
-                        (!newMessage.trim() || !mode) && styles.sendButtonDisabled
-                    ]}
-                    onPress={handleSend}
-                    disabled={!newMessage.trim() || !mode}
-                >
-                    <Feather
-                        name="send"
-                        size={24}
-                        color={newMessage.trim() && mode ? "#000000" : "#000000"}
-                    />
-                </Pressable>
-            </Animated.View>
+                <View style={styles.inputContainer}>
+                    <View style={styles.inputRow}>
+                        <TouchableOpacity
+                            style={styles.mediaButton}
+                            onPress={pickImage}
+                        >
+                            <Ionicons name="image" size={24} color="#4CAF50" />
+                        </TouchableOpacity>
 
-            {/* Floating Action Button */}
-            {!isKeyboardVisible && (
-                <Animated.View style={[styles.fab, { opacity: fadeAnim }]}>
-                    <Pressable
-                        onPress={openCamera}
-                        style={({ pressed }) => [
-                            styles.fabButton,
-                            pressed && styles.fabPressed
-                        ]}
-                    >
-                        <Ionicons name="add" size={28} color="white" />
-                    </Pressable>
-                </Animated.View>
-            )}
-        </KeyboardAvoidingView>
+                        <TouchableOpacity
+                            style={styles.mediaButton}
+                            onPress={takePhoto}
+                        >
+                            <Ionicons name="camera" size={24} color="#4CAF50" />
+                        </TouchableOpacity>
+
+                        <TextInput
+                            style={styles.textInput}
+                            value={inputText}
+                            onChangeText={setInputText}
+                            placeholder="Type your message..."
+                            placeholderTextColor="#999"
+                            multiline
+                            maxLength={500}
+                        />
+
+                        <TouchableOpacity
+                            style={[
+                                styles.sendButton,
+                                (!inputText.trim() || isLoading) && styles.sendButtonDisabled
+                            ]}
+                            onPress={sendMessage}
+                            disabled={!inputText.trim() || isLoading}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <Ionicons name="send" size={20} color="white" />
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </KeyboardAvoidingView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F0FFFA',
-    },
-    messagesContainer: {
-        flex: 1,
-        width: '100%',
+        backgroundColor: '#F5F5F5',
     },
     header: {
+        backgroundColor: '#4CAF50',
+        paddingTop: 10,
+        paddingBottom: 15,
+        paddingHorizontal: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 16,
-        paddingTop: Platform.OS === 'ios' ? 50 : 16,
-        backgroundColor: '#F0FFFA',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20,
+        elevation: 4,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-        zIndex: 10,
+        shadowRadius: 8,
     },
-    headerLeft: {
+    headerContent: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
     },
-    logo: {
+    modeIndicator: {
         width: 40,
-        backgroundColor: 'white',
         height: 40,
-        marginRight: 12,
         borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-    },
-    profileImage: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        marginHorizontal: 8,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
     headerText: {
-        flexDirection: 'column',
+        flex: 1,
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
+        color: 'white',
+    },
+    modeText: {
+        fontSize: 14,
+        color: 'white',
+        opacity: 0.9,
+        marginTop: 2,
+    },
+    modeSelectorButton: {
+        padding: 4,
+    },
+    modeSelector: {
+        backgroundColor: 'white',
+        marginHorizontal: 20,
+        marginTop: 10,
+        borderRadius: 12,
+        padding: 8,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        position: 'absolute',
+        top: 120,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+    },
+    modeOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        marginVertical: 2,
+    },
+    selectedModeOption: {
+        backgroundColor: '#E8F5E8',
+    },
+    modeIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    modeOptionText: {
+        fontSize: 14,
         color: '#333',
+        fontWeight: '500',
     },
-    aiText: {
-        color: '#04714A',
-        fontWeight: 'bold',
-    },
-    statusText: {
-        fontSize: 12,
-        color: '#04714A',
-    },
-    chatContainer: {
+    chatArea: {
         flex: 1,
     },
-    chatContent: {
-        paddingVertical: 16,
-        paddingBottom: Platform.OS === 'ios' ? 100 : 80,
-        flexGrow: 1,
+    messagesList: {
+        flex: 1,
     },
-    messageWrapper: {
+    messagesContent: {
+        padding: 16,
+        paddingBottom: 16,
+    },
+    keyboardAvoidingView: {
+        // This ensures proper keyboard handling
+    },
+    inputContainer: {
+        backgroundColor: 'white',
+        padding: 16,
+        paddingBottom: Platform.OS === 'ios' ? 25 : 16,
+        borderTopWidth: 1,
+        borderTopColor: '#E0E0E0',
+    },
+    inputRow: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        marginBottom: 16,
-        maxWidth: '100%',
     },
-    myMessageWrapper: {
-        justifyContent: 'flex-end',
+    mediaButton: {
+        padding: 8,
+        marginRight: 8,
     },
-    otherMessageWrapper: {
-        justifyContent: 'flex-start',
+    textInput: {
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        fontSize: 16,
+        maxHeight: 100,
+        marginRight: 8,
+    },
+    sendButton: {
+        backgroundColor: '#4CAF50',
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sendButtonDisabled: {
+        backgroundColor: '#A5D6A7',
+        opacity: 0.6,
     },
     messageContainer: {
         maxWidth: '80%',
+        marginVertical: 4,
         padding: 12,
-        borderRadius: 12,
+        borderRadius: 16,
+        elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
-        elevation: 2,
     },
-    loadingMessage: {
-        minWidth: 80,
-        minHeight: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
+    userMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#4CAF50',
+        borderBottomRightRadius: 4,
     },
-    myMessage: {
+    botMessage: {
+        alignSelf: 'flex-start',
         backgroundColor: 'white',
-        borderBottomRightRadius: 0,
+        borderBottomLeftRadius: 4,
     },
-    otherMessage: {
-        backgroundColor: '#04714A',
-        borderBottomLeftRadius: 0,
-    },
-    myMessageText: {
-        color: '#333',
+    messageText: {
         fontSize: 16,
-        lineHeight: 22,
+        lineHeight: 20,
     },
-    otherMessageText: {
+    userMessageText: {
         color: 'white',
-        fontSize: 16,
-        lineHeight: 22,
     },
-    messageTime: {
-        fontSize: 10,
-        marginTop: 4,
-    },
-    myMessageTime: {
-        color: '#666',
-        textAlign: 'right',
-    },
-    otherMessageTime: {
-        color: 'rgba(255,255,255,0.7)',
-        textAlign: 'left',
+    botMessageText: {
+        color: '#333',
     },
     messageImage: {
         width: 200,
         height: 150,
         borderRadius: 8,
-        marginBottom: 4,
+        marginBottom: 8,
     },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 8,
-        margin: 10,
-        borderRadius: 30,
-        backgroundColor: 'white',
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    inputContainerKeyboardActive: {
-        marginBottom: Platform.OS === 'ios' ? 0 : 20,
-    },
-    cameraButton: {
-        backgroundColor: "#04714A",
-        padding: 10,
-        borderRadius: 20,
-        marginRight: 8,
-    },
-    input: {
-        flex: 1,
-        minHeight: 40,
-        maxHeight: 120,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        fontSize: 16,
-        color: '#333',
-    },
-    sendButton: {
-        backgroundColor: "#04714A",
-        borderRadius: 20,
-        padding: 10,
-        marginLeft: 8,
-    },
-    sendButtonPressed: {
-        opacity: 0.8,
-    },
-    sendButtonDisabled: {
-        backgroundColor: "#cccccc",
-    },
-    fab: {
-        position: 'absolute',
-        right: 20,
-        bottom: 90,
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#04714A',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    fabButton: {
-        width: '100%',
-        height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 28,
-    },
-    fabPressed: {
-        opacity: 0.8,
+    timestamp: {
+        fontSize: 11,
+        color: '#999',
+        marginTop: 4,
+        alignSelf: 'flex-end',
     },
 });
-
-export default ChatScreen;
